@@ -1,3 +1,6 @@
+# Dependencies
+node_modules/
+
 # Environments
 venv/
 .env
@@ -5,3 +8,6 @@ venv/
 # Python
 __pycache__/
 *.pyc
+
+# Large media (exceeds GitHub 100MB limit — host on CDN or use Git LFS)
+public/media/background.mp4
