@@ -87,18 +87,23 @@ def _init_gpio():
     if _gpio_initialized:
         return
 
-    try:
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(BUZZER_PIN, GPIO.OUT)
-        GPIO.output(BUZZER_PIN, GPIO.LOW)
-        _gpio_available = True
-        logger.info(f"GPIO initialized. Buzzer on pin {BUZZER_PIN}.")
-    except Exception as e:
-        logger.warning(f"GPIO init failed ({e}) — buzzer will log to terminal only.")
-        _gpio_available = False
-
+    # NO BUZZER HARDWARE — GPIO disabled.
+    # To re-enable later, set _gpio_available = True and
+    # uncomment the GPIO block below.
+    _gpio_available = False
     _gpio_initialized = True
+    logger.info("Buzzer disabled (no hardware) — LCD-only feedback mode.")
+
+    # Uncomment to re-enable buzzer:
+    # try:
+    #     GPIO.setmode(GPIO.BCM)
+    #     GPIO.setwarnings(False)
+    #     GPIO.setup(BUZZER_PIN, GPIO.OUT)
+    #     GPIO.output(BUZZER_PIN, GPIO.LOW)
+    #     _gpio_available = True
+    # except Exception as e:
+    #     logger.warning(f"GPIO init failed: {e}")
+    #     _gpio_available = False
 
 
 def _buzzer_on():
