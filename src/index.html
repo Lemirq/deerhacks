@@ -30,13 +30,17 @@
       --transition: 0.6s ease;
     }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      overscroll-behavior-y: none;
+    }
     body {
       font-family: 'Inter', sans-serif;
       background: var(--white);
       color: var(--black);
       line-height: 1.6;
       overflow-x: hidden;
+      overscroll-behavior-y: none;
     }
 
     /* ── FADE-UP ANIMATION ── */
@@ -59,34 +63,52 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 1000;
-      background: transparent;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      border: 1px solid transparent;
-      border-radius: 0;
-      box-shadow: none;
-      transition: background 0.3s, backdrop-filter 0.3s, border-color 0.3s, color 0.2s,
-        top 0.3s, left 0.3s, right 0.3s, width 0.3s, border-radius 0.3s, box-shadow 0.3s, padding 0.3s, transform 0.3s;
-      padding: 0 40px;
-      height: 64px;
+      height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 24px 0;
+      transition: padding 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        height 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    nav .nav-inner {
+      width: 100%;
+      max-width: 1200px;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 0 16px;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: 2px solid transparent;
+      border-radius: 0;
+      box-shadow: none;
+      transition: background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        backdrop-filter 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-radius 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        box-shadow 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        padding 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
-    nav.scrolled {
-      top: 16px;
-      left: 50%;
-      right: auto;
-      width: calc(100% - 48px);
-      max-width: 1152px;
-      transform: translateX(-50%);
+    nav.nav-over-hero .nav-inner {
+      background: rgba(13, 13, 13, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-color: rgba(255,255,255,0.1);
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      padding: 12px 24px;
+    }
+    nav.scrolled .nav-inner {
       background: rgba(255,255,255,0.94);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-color: rgba(0,0,0,0.06);
       border-radius: 14px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-      padding: 0 24px;
+      padding: 12px 24px;
     }
     nav.nav-over-hero .nav-logo,
     nav.nav-over-hero .nav-links a,
@@ -545,6 +567,15 @@
       background: rgba(255,255,255,0.9);
       border-radius: 50%;
     }
+    .stat-icon-vision .vision-ring {
+      position: absolute;
+      inset: -8px;
+      border: 2px solid rgba(139, 92, 246, 0.7);
+      border-radius: 50%;
+    }
+    .stat-item.visible .stat-icon-vision .vision-ring {
+      animation: vision-ring-spin 2s linear infinite;
+    }
     .stat-icon-vision .glow {
       position: absolute;
       inset: -4px;
@@ -557,6 +588,10 @@
     }
     .stat-item.visible .stat-icon-vision .eye {
       animation: vision-focus 3s ease-in-out infinite;
+    }
+    @keyframes vision-ring-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
     @keyframes vision-glow {
       0%, 100% { opacity: 0; transform: scale(0.9); }
@@ -1264,8 +1299,8 @@
       .nav-links, .nav-right { display: none; }
       .hamburger { display: flex; }
       .container { padding: 0 24px; }
-      nav { padding: 0 24px; }
-      nav.scrolled { width: calc(100% - 32px); top: 12px; padding: 0 20px; }
+      nav { padding: 12px 16px 0; }
+      nav .nav-inner { padding: 12px 20px; }
       .hero-content { padding: 130px 24px 60px; }
       #stats { padding: 48px 24px; }
       .stats-grid { flex-direction: column; gap: 32px; }
@@ -1286,6 +1321,7 @@
 
 <!-- ═══════════════════════════════════════════════ NAVBAR ═══ -->
 <nav id="navbar" class="nav-over-hero">
+  <div class="nav-inner">
   <a href="#" class="nav-logo">
     <span class="dot"></span> Neuro-Sync
   </a>
@@ -1302,6 +1338,7 @@
   <div class="hamburger" id="hamburger" onclick="toggleMenu()">
     <span></span><span></span><span></span>
   </div>
+  </div>
 </nav>
 <div class="mobile-menu" id="mobileMenu">
   <a href="#how" onclick="toggleMenu()">How It Works</a>
@@ -1316,8 +1353,7 @@
   <video class="hero-video-bg" autoplay muted loop playsinline id="heroVideo"></video>
   <div class="hero-overlay"></div>
   <div class="hero-content">
-    <a class="pill-badge hero-pill fade-up"><span class="pulse-dot"></span>Neuro-Sync wins MLH Hackathon →</a>
-    <div class="hero-tag fade-up">AI Coaching for Content Creators</div>
+    <a class="pill-badge hero-pill fade-up"><span class="pulse-dot"></span>AI Coaching For Content Creators →</a>
     <h1 class="hero-headline fade-up delay-1">Real-time feedback.<br>Zero editing excuses.</h1>
     <p class="hero-sub fade-up delay-2">
       Point a camera at yourself. Neuro-Sync watches your face, listens to your voice, 
@@ -1368,6 +1404,7 @@
     <div class="stat-item fade-up delay-2">
       <div class="stat-icon-wrap">
         <div class="stat-icon-vision">
+          <div class="vision-ring"></div>
           <div class="glow"></div>
           <div class="eye"><div class="eye-pupil"></div></div>
         </div>
@@ -1976,13 +2013,16 @@
   /* ── Navbar: transparent over hero, floating bar when scrolled past hero ── */
   const navbar = document.getElementById('navbar');
   const hero = document.getElementById('hero');
+  let lastNavOverHero = true;
   const observerNav = new IntersectionObserver(
     ([e]) => {
       const overHero = e.isIntersecting;
+      if (overHero === lastNavOverHero) return;
+      lastNavOverHero = overHero;
       navbar.classList.toggle('nav-over-hero', overHero);
       navbar.classList.toggle('scrolled', !overHero);
     },
-    { threshold: 0.1, rootMargin: '-64px 0px 0px 0px' }
+    { threshold: 0.05, rootMargin: '-64px 0px 0px 0px' }
   );
   if (hero) observerNav.observe(hero);
 
