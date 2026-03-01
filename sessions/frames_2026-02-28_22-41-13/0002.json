@@ -1,0 +1,24 @@
+{
+  "call": 2,
+  "timestamp": "2026-02-28T22:41:15.604884",
+  "latency_ms": 3.7,
+  "audio": {
+    "volume_rms": 0.0481,
+    "silence_ratio": 0.7866,
+    "estimated_wpm": 350,
+    "peak_volume": 0.1189,
+    "volume_variance": 1e-05
+  },
+  "event": {
+    "event": "GOOD",
+    "score": 0.5,
+    "message": "HOOK EVAL...",
+    "detail": "Collecting...",
+    "buzz": false,
+    "buzz_pattern": "single",
+    "confidence": 1.0,
+    "timestamp": 1772336475.604009,
+    "phase": "hook",
+    "reasoning": "Analyzing your opening..."
+  }
+}

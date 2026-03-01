@@ -1,0 +1,2397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neuro-Sync — Real-time AI Coaching for Content Creators</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0D0D0D;
+      --white: #FFFFFF;
+      --gray-50: #F8F8F8;
+      --gray-100: #F5F5F5;
+      --gray-200: #E5E5E5;
+      --gray-400: #9A9A9A;
+      --gray-600: #4A4A4A;
+      --green: #00C566;
+      --red: #FF4444;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+      --shadow: 0 4px 40px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 60px rgba(0,0,0,0.12);
+      --max-w: 1200px;
+      --section-py: 120px;
+      --transition: 0.6s ease;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      overscroll-behavior-y: none;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--white);
+      color: var(--black);
+      line-height: 1.6;
+      overflow-x: hidden;
+      overscroll-behavior-y: none;
+    }
+
+    /* ── FADE-UP ANIMATION ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .fade-up.delay-1 { transition-delay: 0.1s; }
+    .fade-up.delay-2 { transition-delay: 0.2s; }
+    .fade-up.delay-3 { transition-delay: 0.3s; }
+    .fade-up.delay-4 { transition-delay: 0.4s; }
+
+    /* ── NAVBAR (transparent over hero, floating compact bar when scrolled) ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 24px 0;
+      transition: padding 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        height 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    nav .nav-inner {
+      width: 100%;
+      max-width: 1200px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: 2px solid transparent;
+      border-radius: 0;
+      box-shadow: none;
+      transition: background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        backdrop-filter 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-radius 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        box-shadow 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        padding 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    nav.nav-over-hero .nav-inner {
+      background: rgba(13, 13, 13, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-color: rgba(255,255,255,0.1);
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      padding: 12px 24px;
+    }
+    nav.scrolled .nav-inner {
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-color: rgba(0,0,0,0.06);
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      padding: 12px 24px;
+    }
+    nav.nav-over-hero .nav-logo,
+    nav.nav-over-hero .nav-links a,
+    nav.nav-over-hero .nav-signin { color: var(--white); }
+    nav.nav-over-hero .nav-links a:hover,
+    nav.nav-over-hero .nav-signin:hover { color: rgba(255,255,255,0.85); }
+    nav.nav-over-hero .btn-primary {
+      background: var(--white);
+      color: var(--black);
+    }
+    nav.nav-over-hero .btn-primary:hover { background: rgba(255,255,255,0.9); }
+
+    .nav-logo {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: var(--black);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: -0.01em;
+      transition: color 0.2s;
+    }
+    .nav-logo .dot {
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      list-style: none;
+    }
+    .nav-links a,
+    .nav-signin {
+      text-decoration: none;
+      font-size: 1.05rem;
+      font-weight: 450;
+      padding: 12px 22px;
+      border-radius: var(--radius-sm);
+      border: 2px solid transparent;
+      transition: color 0.2s, background 0.2s, border-color 0.2s;
+    }
+    .nav-links a {
+      color: var(--gray-600);
+    }
+    nav:not(.nav-over-hero) .nav-links a:hover,
+    nav:not(.nav-over-hero) .nav-signin:hover {
+      color: var(--black);
+      background: var(--gray-100);
+      border-color: var(--gray-200);
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-signin {
+      color: var(--gray-600);
+    }
+    nav.nav-over-hero .nav-links a:hover,
+    nav.nav-over-hero .nav-signin:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.4);
+    }
+
+    .btn-primary {
+      background: var(--black);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 10px 22px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-primary:hover { background: #222; transform: translateY(-1px); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--black);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      padding: 10px 22px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-ghost:hover { border-color: var(--black); background: var(--gray-50); transform: translateY(-1px); }
+
+    /* Hamburger */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .hamburger span {
+      width: 22px; height: 2px;
+      background: var(--black);
+      border-radius: 2px;
+      transition: 0.3s;
+    }
+    nav.nav-over-hero .hamburger span { background: var(--white); }
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 64px; left: 0; right: 0;
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 24px 40px;
+      flex-direction: column;
+      gap: 20px;
+      z-index: 999;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      text-decoration: none;
+      color: var(--gray-600);
+      font-size: 1rem;
+      font-weight: 450;
+    }
+
+    /* ── SHARED ── */
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      background: var(--gray-100);
+      border-radius: var(--radius-pill);
+      padding: 6px 16px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--gray-600);
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .pill-badge:hover { background: var(--gray-200); }
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 24px;
+    }
+
+    /* ── HERO (full viewport, video edge-to-edge) ── */
+    #hero {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      overflow: hidden;
+      /* Fallback gradient when video is missing (background.mp4 excluded from git — host elsewhere or use Git LFS) */
+      background: linear-gradient(135deg, #0D0D0D 0%, #1a1a2e 50%, #16213e 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    #heroCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 0;
+    }
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.75) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 900px;
+      padding: 130px 40px 80px;
+      margin: 0 auto;
+    }
+    .hero-pill {
+      margin-bottom: 24px;
+      background: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.95);
+      gap: 10px;
+    }
+    .hero-pill:hover { background: rgba(255,255,255,0.25); }
+    .hero-pill .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.95);
+      flex-shrink: 0;
+      animation: pulse-dot 0.8s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.25); }
+    }
+    .hero-tag {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 28px;
+    }
+    .hero-headline {
+      font-size: clamp(2.8rem, 6vw, 4.75rem);
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      margin-bottom: 24px;
+      max-width: 860px;
+      margin-left: auto;
+      margin-right: auto;
+      text-shadow: 0 2px 24px rgba(0,0,0,0.4);
+    }
+    .hero-sub {
+      font-size: 1.15rem;
+      font-weight: 400;
+      color: rgba(255,255,255,0.9);
+      max-width: 540px;
+      margin: 0 auto 44px;
+      line-height: 1.65;
+      text-shadow: 0 1px 12px rgba(0,0,0,0.3);
+    }
+    .hero-cta {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 60px;
+    }
+    .hero-cta .btn-primary { padding: 13px 30px; font-size: 0.95rem; border-radius: var(--radius-sm); }
+    .hero-cta .btn-ghost {
+      padding: 13px 30px;
+      font-size: 0.95rem;
+      border-color: rgba(255,255,255,0.6);
+      color: var(--white);
+    }
+    .hero-cta .btn-ghost:hover {
+      border-color: var(--white);
+      background: rgba(255,255,255,0.12);
+      color: var(--white);
+    }
+
+    /* Terminal dot styles (kept for feature sections) */
+    .terminal-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .td-red { background: #FF5F57; }
+    .td-yellow { background: #FEBC2E; }
+    .td-green { background: #28C840; }
+    .terminal-title {
+      color: #666;
+      font-size: 0.75rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      margin-left: 8px;
+    }
+    .tlog { color: #555; }
+    .tlog.good { color: #00C566; }
+    .tlog.bad { color: #FF6B6B; }
+    .tlog.warn { color: #FFA500; }
+    .tlog.info { color: #5BB8FF; }
+    .cursor-blink {
+      display: inline-block;
+      width: 8px; height: 14px;
+      background: var(--green);
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── STATS BAR ── */
+    #stats {
+      background: var(--gray-50);
+      padding: 72px 40px;
+    }
+    .stats-grid {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      padding: 28px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-radius: var(--radius-md);
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+    .stat-item:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.8);
+    }
+    .stat-icon-wrap {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stat-item.visible .stat-icon-wrap { animation: stat-icon-pop 0.5s ease-out forwards; }
+    @keyframes stat-icon-pop {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.08); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    /* Latency: circular timer pulse */
+    .stat-icon-latency {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+    .stat-icon-latency .ring {
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--gray-200);
+      border-radius: 50%;
+      border-top-color: var(--green);
+    }
+    .stat-item.visible .stat-icon-latency .ring {
+      animation: latency-spin 2s ease-in-out infinite;
+    }
+    .stat-icon-latency .ring-inner {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      opacity: 0.2;
+    }
+    .stat-item.visible .stat-icon-latency .ring-inner {
+      animation: latency-pulse 1s ease-in-out infinite;
+    }
+    @keyframes latency-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes latency-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.2; }
+      50% { transform: scale(1.15); opacity: 0.35; }
+    }
+    /* Signals: 5 dots that light up in sequence */
+    .stat-icon-signals {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .stat-icon-signals .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--gray-200);
+      transition: all 0.3s ease;
+    }
+    .stat-icon-signals .dot:nth-child(1) { background: var(--green); color: var(--green); }
+    .stat-icon-signals .dot:nth-child(2) { background: #22c55e; color: #22c55e; }
+    .stat-icon-signals .dot:nth-child(3) { background: #eab308; color: #eab308; }
+    .stat-icon-signals .dot:nth-child(4) { background: #f97316; color: #f97316; }
+    .stat-icon-signals .dot:nth-child(5) { background: var(--red); color: var(--red); }
+    .stat-item.visible .stat-icon-signals .dot {
+      animation: signal-glow 1.2s ease-in-out infinite;
+    }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(1) { animation-delay: 0s; }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(2) { animation-delay: 0.15s; }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(3) { animation-delay: 0.3s; }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(4) { animation-delay: 0.45s; }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(5) { animation-delay: 0.6s; }
+    @keyframes signal-glow {
+      0%, 100% { opacity: 0.4; transform: scale(0.9); box-shadow: none; }
+      50% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 12px currentColor; }
+    }
+    /* Gemini Vision: eye / AI focus glow */
+    .stat-icon-vision {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+    .stat-icon-vision .eye {
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+      opacity: 0.9;
+    }
+    .stat-icon-vision .eye-pupil {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      top: 50%;
+      left: 50%;
+      margin: -6px 0 0 -6px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 50%;
+    }
+    .stat-icon-vision .vision-ring {
+      position: absolute;
+      inset: -8px;
+      border: 2px solid rgba(139, 92, 246, 0.7);
+      border-radius: 50%;
+    }
+    .stat-item.visible .stat-icon-vision .vision-ring {
+      animation: vision-ring-spin 2s linear infinite;
+    }
+    .stat-icon-vision .glow {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%);
+      opacity: 0;
+    }
+    .stat-item.visible .stat-icon-vision .glow {
+      animation: vision-glow 2s ease-in-out infinite;
+    }
+    .stat-item.visible .stat-icon-vision .eye {
+      animation: vision-focus 3s ease-in-out infinite;
+    }
+    @keyframes vision-ring-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes vision-glow {
+      0%, 100% { opacity: 0; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    @keyframes vision-focus {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; }
+    }
+    .stat-divider {
+      width: 1px;
+      height: 80px;
+      background: var(--gray-200);
+      flex-shrink: 0;
+    }
+    .stat-number {
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--black);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--gray-400);
+      font-weight: 400;
+    }
+
+    /* ── FEATURE BENTO ── */
+    #features {
+      padding: var(--section-py) 40px;
+    }
+    .features-header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+    .features-header h2 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-top: 16px;
+    }
+
+    .feature-block {
+      max-width: var(--max-w);
+      margin: 0 auto 80px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .feature-block:last-child { margin-bottom: 0; }
+
+    .feature-left { padding-top: 8px; }
+    .feature-tag {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 20px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .feature-pill {
+      background: var(--gray-100);
+      border-radius: var(--radius-pill);
+      padding: 4px 12px;
+      color: var(--gray-600);
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+    .feature-left h3 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .feature-left p {
+      font-size: 0.9rem;
+      color: var(--gray-600);
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .feature-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .feature-tab {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.2s;
+      border: none;
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      text-align: left;
+      width: 100%;
+    }
+    .feature-tab:hover { background: var(--gray-50); color: var(--black); }
+    .feature-tab.active { background: var(--gray-100); color: var(--black); }
+    .feature-tab .tab-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--gray-200);
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .feature-tab.active .tab-dot { background: var(--green); }
+
+    .feature-right { }
+    .feature-panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .feature-panel.active { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .dark-card {
+      background: #0D0D0D;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    .dark-card-header {
+      background: #1A1A1A;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dark-card-body {
+      padding: 28px;
+      font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 0.8rem;
+      line-height: 1.9;
+      color: #888;
+    }
+    .dc-green { color: #00C566; }
+    .dc-red { color: #FF6B6B; }
+    .dc-blue { color: #5BB8FF; }
+    .dc-yellow { color: #FFA500; }
+    .dc-white { color: #E0E0E0; }
+
+    .signal-card {
+      background: #0D0D0D;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--shadow-lg);
+    }
+    .signal-name {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      margin-bottom: 20px;
+    }
+    .signal-led {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      color: #888;
+    }
+    .led-orb {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .signal-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 0.82rem;
+    }
+    .signal-key { color: #555; width: 100px; flex-shrink: 0; }
+    .signal-val { color: #E0E0E0; }
+    .signal-desc { color: #777; font-size: 0.82rem; line-height: 1.6; margin-top: 16px; border-top: 1px solid #222; padding-top: 16px; }
+
+    .review-card {
+      background: #0D0D0D;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+    }
+    .review-card h4 { color: #888; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 20px; }
+    .bar-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .bar-label { color: #666; font-size: 0.78rem; width: 110px; flex-shrink: 0; }
+    .bar-track { flex: 1; height: 8px; background: #1A1A1A; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; background: var(--green); width: 0; transition: width 1s ease 0.3s; }
+    .bar-score { color: #E0E0E0; font-size: 0.78rem; font-weight: 600; width: 36px; text-align: right; }
+
+    /* ── HOW IT WORKS (Timeline) ── */
+    #how {
+      padding: var(--section-py) 40px;
+      background: var(--gray-50);
+      position: relative;
+      overflow: hidden;
+    }
+    #how::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,197,102,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    #how::after {
+      content: '';
+      position: absolute;
+      bottom: -15%;
+      left: -8%;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .how-bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+    .how-bg-dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+    }
+    .creator-elements {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .creator-elem {
+      position: absolute;
+      opacity: 0.9;
+      color: #F5D547;
+      filter: drop-shadow(0 0 8px rgba(255, 220, 80, 0.9)) drop-shadow(0 0 20px rgba(255, 200, 50, 0.6)) drop-shadow(0 0 40px rgba(255, 180, 30, 0.4));
+      transition: opacity 0.4s ease, filter 0.4s ease;
+    }
+    #how:hover .creator-elem { filter: drop-shadow(0 0 12px rgba(255, 220, 80, 1)) drop-shadow(0 0 28px rgba(255, 200, 50, 0.8)) drop-shadow(0 0 50px rgba(255, 180, 30, 0.5)); }
+    .creator-elem svg { display: block; }
+    .creator-cam-1 { top: 8%; right: 6%; width: 58px; height: 38px; transform: rotate(-8deg); }
+    .creator-cam-2 { top: 28%; left: 4%; width: 48px; height: 32px; transform: rotate(12deg); }
+    .creator-cam-3 { top: 55%; right: 5%; width: 52px; height: 34px; transform: rotate(-5deg); }
+    .creator-cam-4 { top: 78%; left: 8%; width: 44px; height: 30px; transform: rotate(8deg); }
+    .creator-cam-5 { top: 15%; left: 18%; width: 40px; height: 26px; transform: rotate(-15deg); }
+    .creator-cam-6 { top: 68%; right: 15%; width: 46px; height: 30px; transform: rotate(6deg); }
+    .creator-cam-7 { top: 38%; right: 25%; width: 42px; height: 28px; transform: rotate(-18deg); }
+    .creator-cam-8 { top: 5%; left: 28%; width: 38px; height: 25px; transform: rotate(14deg); }
+    .creator-cam-9 { top: 92%; left: 25%; width: 36px; height: 24px; transform: rotate(-8deg); }
+    .creator-cam-10 { top: 50%; left: 20%; width: 34px; height: 22px; transform: rotate(18deg); }
+    .creator-tripod-1 { top: 20%; left: 2%; width: 42px; height: 60px; transform: rotate(6deg); }
+    .creator-tripod-2 { top: 62%; right: 3%; width: 38px; height: 54px; transform: rotate(-10deg); }
+    .creator-tripod-3 { top: 85%; left: 15%; width: 36px; height: 50px; transform: rotate(4deg); }
+    .creator-tripod-4 { top: 35%; right: 18%; width: 32px; height: 44px; transform: rotate(-14deg); }
+    .creator-tripod-5 { top: 72%; left: 22%; width: 30px; height: 42px; transform: rotate(8deg); }
+    .creator-ring-1 { top: 12%; right: 22%; width: 52px; height: 52px; transform: rotate(-12deg); }
+    .creator-ring-2 { top: 48%; left: 2%; width: 44px; height: 44px; transform: rotate(15deg); }
+    .creator-ring-3 { top: 72%; right: 20%; width: 48px; height: 48px; transform: rotate(-8deg); }
+    .creator-ring-4 { top: 35%; right: 8%; width: 36px; height: 36px; transform: rotate(20deg); }
+    .creator-ring-5 { top: 22%; left: 25%; width: 40px; height: 40px; transform: rotate(-22deg); }
+    .creator-ring-6 { top: 58%; right: 28%; width: 34px; height: 34px; transform: rotate(12deg); }
+    .creator-ring-7 { top: 88%; right: 12%; width: 32px; height: 32px; transform: rotate(-6deg); }
+    .creator-mic-1 { top: 42%; left: 12%; width: 28px; height: 44px; transform: rotate(4deg); }
+    .creator-mic-2 { top: 88%; right: 8%; width: 24px; height: 38px; transform: rotate(-6deg); }
+    .creator-mic-3 { top: 5%; left: 8%; width: 26px; height: 42px; transform: rotate(10deg); }
+    .creator-mic-4 { top: 65%; left: 28%; width: 22px; height: 36px; transform: rotate(-12deg); }
+    .creator-mic-5 { top: 18%; right: 32%; width: 24px; height: 38px; transform: rotate(6deg); }
+    .creator-softbox-1 { top: 25%; right: 12%; width: 44px; height: 34px; transform: rotate(10deg); }
+    .creator-softbox-2 { top: 58%; left: 6%; width: 40px; height: 30px; transform: rotate(-12deg); }
+    .creator-softbox-3 { top: 82%; right: 25%; width: 36px; height: 28px; transform: rotate(5deg); }
+    .creator-softbox-4 { top: 8%; right: 35%; width: 32px; height: 24px; transform: rotate(-16deg); }
+    .creator-softbox-5 { top: 45%; left: 8%; width: 34px; height: 26px; transform: rotate(18deg); }
+    .creator-softbox-6 { top: 78%; left: 30%; width: 30px; height: 22px; transform: rotate(-10deg); }
+    .how-header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      margin-bottom: 80px;
+    }
+    .how-header h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-top: 16px;
+    }
+    .how-timeline {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+      padding-left: 0;
+    }
+    .how-timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--gray-200);
+      transform: translateX(-50%);
+      border-radius: 1px;
+    }
+    .how-timeline-line-fill {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--green), #22c55e);
+      transform: translateX(-50%);
+      border-radius: 1px;
+      transform-origin: top;
+      transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .how-step {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 80px;
+      min-height: 140px;
+    }
+    .how-step:last-child { margin-bottom: 0; }
+    .how-step:nth-child(odd) {
+      flex-direction: row;
+      padding-right: calc(50% + 40px);
+    }
+    .how-step:nth-child(even) {
+      flex-direction: row-reverse;
+      padding-left: calc(50% + 40px);
+    }
+    .how-step-node {
+      position: absolute;
+      left: 50%;
+      top: 28px;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      background: var(--white);
+      border: 3px solid var(--gray-200);
+      border-radius: 50%;
+      z-index: 2;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .how-step.visible .how-step-node {
+      border-color: var(--green);
+      background: var(--green);
+      box-shadow: 0 0 0 6px rgba(0,197,102,0.2);
+    }
+    .how-step-content {
+      flex: 1;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s,
+        transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
+    }
+    .how-step.visible .how-step-content {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .how-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 36px 32px;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    }
+    .how-step.visible .how-card {
+      border-color: rgba(0,197,102,0.2);
+      box-shadow: var(--shadow), 0 0 0 1px rgba(0,197,102,0.08);
+    }
+    .how-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .how-icon { width: 48px; height: 48px; margin-bottom: 20px; display: flex; align-items: center; justify-content: flex-start; }
+    .how-icon-capture {
+      position: relative;
+      width: 40px; height: 40px;
+      border: 2.5px solid var(--gray-400);
+      border-radius: 50%;
+    }
+    .how-icon-capture::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border: 2px solid var(--gray-300);
+      border-radius: 50%;
+    }
+    .how-icon-capture::after {
+      content: '';
+      position: absolute;
+      inset: 50%;
+      width: 6px; height: 6px;
+      margin: -3px 0 0 -3px;
+      background: var(--black);
+      border-radius: 50%;
+    }
+    .how-step.visible .how-icon-capture { border-color: var(--green); animation: icon-pulse 2s ease-in-out infinite; }
+    .how-step.visible .how-icon-capture::before { border-color: rgba(0,197,102,0.5); }
+    .how-icon-analyze {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .how-icon-analyze span {
+      width: 10px; height: 10px;
+      background: var(--gray-300);
+      border-radius: 2px;
+      transition: all 0.4s ease;
+    }
+    .how-step.visible .how-icon-analyze span {
+      background: var(--green);
+      animation: icon-node 1.2s ease-in-out infinite;
+    }
+    .how-step.visible .how-icon-analyze span:nth-child(1) { animation-delay: 0s; }
+    .how-step.visible .how-icon-analyze span:nth-child(2) { animation-delay: 0.2s; }
+    .how-step.visible .how-icon-analyze span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes icon-node {
+      0%, 100% { opacity: 0.6; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+    .how-icon-signal {
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+      height: 32px;
+    }
+    .how-icon-signal span {
+      width: 6px;
+      background: var(--gray-300);
+      border-radius: 2px;
+      transition: all 0.4s ease;
+    }
+    .how-icon-signal span:nth-child(1) { height: 12px; }
+    .how-icon-signal span:nth-child(2) { height: 24px; }
+    .how-icon-signal span:nth-child(3) { height: 18px; }
+    .how-step.visible .how-icon-signal span {
+      background: var(--green);
+      animation: icon-bars 1s ease-in-out infinite;
+    }
+    .how-step.visible .how-icon-signal span:nth-child(1) { animation-delay: 0s; }
+    .how-step.visible .how-icon-signal span:nth-child(2) { animation-delay: 0.15s; }
+    .how-step.visible .how-icon-signal span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes icon-bars {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    @keyframes icon-pulse {
+      0%, 100% { box-shadow: none; }
+      50% { box-shadow: 0 0 0 4px rgba(0,197,102,0.15); }
+    }
+    .how-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 12px; }
+    .how-card p { font-size: 0.875rem; color: var(--gray-600); line-height: 1.65; }
+
+    /* ── HARDWARE ── */
+    #hardware {
+      padding: var(--section-py) 40px;
+    }
+    .hardware-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+    .hardware-left h2 {
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 40px;
+    }
+    .hw-table { width: 100%; border-collapse: collapse; }
+    .hw-table tr { border-bottom: 1px solid var(--gray-100); }
+    .hw-table tr:last-child { border-bottom: none; }
+    .hw-table td { padding: 16px 0; vertical-align: top; }
+    .hw-table td:first-child {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--black);
+      width: 180px;
+    }
+    .hw-dot { color: var(--gray-200); margin: 0 12px; }
+    .hw-table td:last-child { font-size: 0.85rem; color: var(--gray-600); line-height: 1.5; }
+
+    .hardware-right h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+    .wiring-card {
+      background: #0D0D0D;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+    }
+    .wiring-card h4 {
+      color: #888;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .wire-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 10px 0;
+      border-bottom: 1px solid #1A1A1A;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+    }
+    .wire-row:last-child { border-bottom: none; }
+    .wire-port { color: #FFA500; width: 50px; }
+    .wire-arrow { color: #333; margin: 0 12px; }
+    .wire-component { color: #E0E0E0; flex: 1; }
+    .wire-type { color: #555; font-size: 0.72rem; }
+
+    /* ── TESTIMONIAL ── */
+    #testimonial {
+      padding: var(--section-py) 40px;
+      background: var(--gray-50);
+      text-align: center;
+    }
+    .quote-card {
+      max-width: 760px;
+      margin: 0 auto;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 20px;
+      padding: 64px 56px;
+      box-shadow: var(--shadow);
+    }
+    .quote-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 32px;
+    }
+    .quote-text {
+      font-size: clamp(1.3rem, 2.5vw, 1.7rem);
+      font-weight: 500;
+      font-style: italic;
+      line-height: 1.5;
+      color: var(--black);
+      letter-spacing: -0.015em;
+      margin-bottom: 36px;
+    }
+    .quote-divider {
+      width: 40px; height: 2px;
+      background: var(--gray-200);
+      margin: 0 auto 24px;
+    }
+    .quote-attribution {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--gray-400);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── FINAL CTA ── */
+    #cta {
+      background: var(--black);
+      padding: var(--section-py) 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 120%, rgba(0,197,102,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 24px;
+    }
+    #cta h2 {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    #cta p {
+      font-size: 1rem;
+      color: #666;
+      max-width: 480px;
+      margin: 0 auto 44px;
+      line-height: 1.65;
+    }
+    .btn-white {
+      background: var(--white);
+      color: var(--black);
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 14px 36px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-white:hover { background: #f0f0f0; transform: translateY(-2px); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--white);
+      border-top: 1px solid var(--gray-200);
+      padding: 60px 40px 40px;
+    }
+    .footer-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 80px;
+      margin-bottom: 48px;
+    }
+    .footer-brand .nav-logo { margin-bottom: 12px; display: inline-flex; }
+    .footer-copy {
+      font-size: 0.8rem;
+      color: var(--gray-400);
+      margin-bottom: 16px;
+    }
+    .footer-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .footer-badge {
+      background: var(--gray-100);
+      border-radius: var(--radius-pill);
+      padding: 4px 12px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--gray-600);
+    }
+    .footer-col h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--black);
+      margin-bottom: 16px;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col a {
+      font-size: 0.82rem;
+      color: var(--gray-400);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-col a:hover { color: var(--black); }
+    .footer-bottom {
+      border-top: 1px solid var(--gray-100);
+      padding-top: 24px;
+      font-size: 0.75rem;
+      color: var(--gray-400);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .feature-block { grid-template-columns: 1fr; }
+      .hardware-inner { grid-template-columns: 1fr; gap: 48px; }
+      .footer-top { grid-template-columns: 1fr; gap: 40px; }
+      .how-timeline::before { left: 20px; transform: none; }
+      .how-timeline-line-fill { left: 20px; transform: none; }
+      .how-step { flex-direction: row !important; padding-left: 60px !important; padding-right: 0 !important; margin-bottom: 48px; min-height: 120px; }
+      .how-step-node { left: 20px; margin-left: 0; }
+      .how-step:last-child { margin-bottom: 0; }
+    }
+    @media (max-width: 768px) {
+      .nav-links, .nav-right { display: none; }
+      .hamburger { display: flex; }
+      .container { padding: 0 24px; }
+      nav { padding: 12px 16px 0; }
+      nav .nav-inner { padding: 12px 20px; }
+      .hero-content { padding: 130px 24px 60px; }
+      #stats { padding: 48px 24px; }
+      .stats-grid { flex-direction: column; gap: 32px; }
+      .stat-divider { width: 80px; height: 1px; }
+      .stat-item { padding: 24px 20px; }
+      #features, #how, #hardware, #testimonial, #cta { padding: 80px 24px; }
+      footer { padding: 48px 24px 32px; }
+      .quote-card { padding: 40px 28px; }
+    }
+    @media (max-width: 480px) {
+      .hero-headline { font-size: 2.4rem; }
+      .hero-cta .btn-primary,
+      .hero-cta .btn-ghost { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ NAVBAR ═══ -->
+<nav id="navbar" class="nav-over-hero">
+  <div class="nav-inner">
+  <a href="#" class="nav-logo">
+    <span class="dot"></span> Neuro-Sync
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#features">Signals</a></li>
+    <li><a href="#hardware">Hardware</a></li>
+    <li><a href="#cta">Demo</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="#" class="nav-signin">Sign in</a>
+    <a href="#cta" class="btn-primary">Talk to us</a>
+  </div>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#how" onclick="toggleMenu()">How It Works</a>
+  <a href="#features" onclick="toggleMenu()">Signals</a>
+  <a href="#hardware" onclick="toggleMenu()">Hardware</a>
+  <a href="#cta" onclick="toggleMenu()">Demo</a>
+  <a href="#cta" onclick="toggleMenu()" style="font-weight:600;color:var(--black)">Talk to us →</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════ HERO ═══ -->
+<section id="hero">
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <a class="pill-badge hero-pill fade-up"><span class="pulse-dot"></span>AI Coaching For Content Creators →</a>
+    <h1 class="hero-headline fade-up delay-1">Real-time feedback.<br>Zero editing excuses.</h1>
+    <p class="hero-sub fade-up delay-2">
+      Point a camera at yourself. Neuro-Sync watches your face, listens to your voice, 
+      and fires LED + buzzer signals the moment your energy drops.
+    </p>
+    <div class="hero-cta fade-up delay-3">
+      <a href="#cta" class="btn-primary">Get Started</a>
+      <a href="#how" class="btn-ghost">Watch Demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ STATS ═══ -->
+<section id="stats">
+  <div class="stats-grid">
+    <div class="stat-item fade-up">
+      <div class="stat-icon-wrap">
+        <div class="stat-icon-latency">
+          <div class="ring"></div>
+          <div class="ring-inner"></div>
+        </div>
+      </div>
+      <div class="stat-number" data-target="2" data-suffix="s" data-decimals="0">0s</div>
+      <div class="stat-label">Feedback loop latency</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item fade-up delay-1">
+      <div class="stat-icon-wrap">
+        <div class="stat-icon-signals">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+      </div>
+      <div class="stat-number" data-target="5" data-suffix="" data-decimals="0">0</div>
+      <div class="stat-label">Coaching signals</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item fade-up delay-2">
+      <div class="stat-icon-wrap">
+        <div class="stat-icon-vision">
+          <div class="vision-ring"></div>
+          <div class="glow"></div>
+          <div class="eye"><div class="eye-pupil"></div></div>
+        </div>
+      </div>
+      <div class="stat-number" data-target="1.5" data-suffix=" Flash" data-decimals="1" style="font-size:clamp(1.8rem,3.5vw,2.6rem)">0 Flash</div>
+      <div class="stat-label">Gemini Vision model</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ FEATURES ═══ -->
+<section id="features">
+  <div class="features-header fade-up">
+    <div class="section-label">FEATURES</div>
+    <h2>Built to make you better,<br>one second at a time.</h2>
+  </div>
+
+  <!-- ─── Feature A: Live Coaching ─── -->
+  <div class="feature-block fade-up" id="blockA">
+    <div class="feature-left">
+      <div class="feature-tag">
+        <span class="feature-pill">LIVE COACHING</span>
+      </div>
+      <h3>Instant AI coaching, wired to your body.</h3>
+      <p>Gemini Vision analyzes your face and audio every 2 seconds. Physical LED + buzzer signals tell your body — not your brain — what to fix.</p>
+      <div class="feature-tabs" id="tabsA">
+        <button class="feature-tab active" onclick="switchTab('A',0,this)">
+          <span class="tab-dot"></span> Capture
+        </button>
+        <button class="feature-tab" onclick="switchTab('A',1,this)">
+          <span class="tab-dot"></span> Analyze
+        </button>
+        <button class="feature-tab" onclick="switchTab('A',2,this)">
+          <span class="tab-dot"></span> Signal
+        </button>
+        <button class="feature-tab" onclick="switchTab('A',3,this)">
+          <span class="tab-dot"></span> Learn
+        </button>
+      </div>
+    </div>
+    <div class="feature-right">
+      <div class="feature-panel active" id="panelA-0">
+        <div class="dark-card">
+          <div class="dark-card-header">
+            <div class="terminal-dot td-red"></div>
+            <div class="terminal-dot td-yellow"></div>
+            <div class="terminal-dot td-green"></div>
+            <span class="terminal-title">capture.py — frame ingestion</span>
+          </div>
+          <div class="dark-card-body">
+            <div class="dc-blue"># Webcam streams at 30fps</div>
+            <div class="dc-white">frame = webcam.read()</div>
+            <div class="dc-white">audio_level = sound_sensor.read()</div>
+            <div>&nbsp;</div>
+            <div class="dc-blue"># Sample every 2 seconds</div>
+            <div class="dc-white">if time.since_last() &gt;= 2.0:</div>
+            <div class="dc-white">&nbsp;&nbsp;snapshot = encode_b64(frame)</div>
+            <div class="dc-white">&nbsp;&nbsp;payload = pack(snapshot, audio_level)</div>
+            <div class="dc-green">&nbsp;&nbsp;# → Send to Gemini Vision</div>
+            <div class="dc-white">&nbsp;&nbsp;coach.analyze(payload)</div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelA-1">
+        <div class="dark-card">
+          <div class="dark-card-header">
+            <div class="terminal-dot td-red"></div>
+            <div class="terminal-dot td-yellow"></div>
+            <div class="terminal-dot td-green"></div>
+            <span class="terminal-title">gemini_coach.py — vision analysis</span>
+          </div>
+          <div class="dark-card-body">
+            <div class="dc-blue"># Gemini 1.5 Flash Vision prompt</div>
+            <div class="dc-white">response = gemini.analyze({</div>
+            <div class="dc-white">&nbsp;&nbsp;image: frame_b64,</div>
+            <div class="dc-white">&nbsp;&nbsp;audio_rms: 0.72,</div>
+            <div class="dc-white">&nbsp;&nbsp;task: "score_creator"</div>
+            <div class="dc-white">})</div>
+            <div>&nbsp;</div>
+            <div class="dc-green"># → { signal: "GOOD", score: 92 }</div>
+            <div class="dc-white">signal = response.signal</div>
+            <div class="dc-white">score = response.score</div>
+            <div class="dc-yellow">latency: 1.3s avg</div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelA-2">
+        <div class="dark-card">
+          <div class="dark-card-header">
+            <div class="terminal-dot td-red"></div>
+            <div class="terminal-dot td-yellow"></div>
+            <div class="terminal-dot td-green"></div>
+            <span class="terminal-title">feedback.py — hardware output</span>
+          </div>
+          <div class="dark-card-body">
+            <div class="dc-blue"># Map signal → hardware action</div>
+            <div class="dc-white">match signal:</div>
+            <div class="dc-green">&nbsp;&nbsp;case "GOOD":      green_led.flash(1)</div>
+            <div class="dc-red">&nbsp;&nbsp;case "RAISE_ENERGY": red_led.on(); buzz()</div>
+            <div class="dc-yellow">&nbsp;&nbsp;case "SPEED_UP":  buzz(pattern=2)</div>
+            <div class="dc-red">&nbsp;&nbsp;case "VIBE_CHECK": red_led.on()</div>
+            <div class="dc-blue">&nbsp;&nbsp;case "VISUAL_RESET": red_led.flash(3)</div>
+            <div>&nbsp;</div>
+            <div class="dc-green"># Physical signal fires in &lt; 50ms</div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelA-3">
+        <div class="dark-card">
+          <div class="dark-card-header">
+            <div class="terminal-dot td-red"></div>
+            <div class="terminal-dot td-yellow"></div>
+            <div class="terminal-dot td-green"></div>
+            <span class="terminal-title">review.py — session learning</span>
+          </div>
+          <div class="dark-card-body">
+            <div class="dc-blue"># End-of-session analysis</div>
+            <div class="dc-white">report = gemini.review(session_log)</div>
+            <div>&nbsp;</div>
+            <div class="dc-white">print(report.best_moment)    </div>
+            <div class="dc-green"># → "2:14 — peak energy, great pacing"</div>
+            <div class="dc-white">print(report.biggest_issue)  </div>
+            <div class="dc-red"># → "Eye contact dropped 3x in first 60s"</div>
+            <div class="dc-white">print(report.overall_score)  </div>
+            <div class="dc-yellow"># → 78/100</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Feature B: Signal Dictionary ─── -->
+  <div class="feature-block fade-up" id="blockB">
+    <div class="feature-left">
+      <div class="feature-tag">
+        <span class="feature-pill">REAL-TIME SIGNALS</span>
+      </div>
+      <h3>Five signals. Zero ambiguity.</h3>
+      <p>Each signal maps to a specific LED color and buzz pattern. Your muscle memory learns what they mean — so you never break flow to check a screen.</p>
+      <div class="feature-tabs" id="tabsB">
+        <button class="feature-tab active" onclick="switchTab('B',0,this)">
+          <span class="tab-dot"></span> GOOD
+        </button>
+        <button class="feature-tab" onclick="switchTab('B',1,this)">
+          <span class="tab-dot"></span> SPEED_UP
+        </button>
+        <button class="feature-tab" onclick="switchTab('B',2,this)">
+          <span class="tab-dot"></span> VIBE_CHECK
+        </button>
+        <button class="feature-tab" onclick="switchTab('B',3,this)">
+          <span class="tab-dot"></span> RAISE_ENERGY
+        </button>
+        <button class="feature-tab" onclick="switchTab('B',4,this)">
+          <span class="tab-dot"></span> VISUAL_RESET
+        </button>
+      </div>
+    </div>
+    <div class="feature-right">
+      <div class="feature-panel active" id="panelB-0">
+        <div class="signal-card">
+          <div class="signal-name dc-green">◉ GOOD</div>
+          <div class="signal-led">
+            <div class="led-orb" style="background:#00C566;box-shadow:0 0 12px #00C566;"></div>
+            <span style="color:#888">Green LED — single flash</span>
+          </div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Buzz:</span><span class="signal-val">None</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Score:</span><span class="signal-val">≥ 80 / 100</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Meaning:</span><span class="signal-val" style="color:#00C566">Keep doing what you're doing</span></div>
+          <div class="signal-desc">Energy, pacing, and eye contact are all on point. Gemini sees a confident, engaging creator. Don't change a thing.</div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelB-1">
+        <div class="signal-card">
+          <div class="signal-name" style="color:#FFA500">⚡ SPEED_UP</div>
+          <div class="signal-led">
+            <div class="led-orb" style="background:#FF6B6B;box-shadow:0 0 12px #FF6B6B;"></div>
+            <span style="color:#888">Red LED + buzzer</span>
+          </div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Buzz:</span><span class="signal-val">2 short pulses</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Score:</span><span class="signal-val">Pacing &lt; 60</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Meaning:</span><span class="signal-val" style="color:#FFA500">You're speaking too slowly</span></div>
+          <div class="signal-desc">Gemini detected sluggish pacing or long pauses. Pick up the tempo — your audience is drifting.</div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelB-2">
+        <div class="signal-card">
+          <div class="signal-name" style="color:#FF6B6B">⚠ VIBE_CHECK</div>
+          <div class="signal-led">
+            <div class="led-orb" style="background:#FF6B6B;box-shadow:0 0 12px #FF6B6B;"></div>
+            <span style="color:#888">Red LED — solid on</span>
+          </div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Buzz:</span><span class="signal-val">None</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Score:</span><span class="signal-val">Energy &lt; 50</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Meaning:</span><span class="signal-val" style="color:#FF6B6B">Overall vibe is low</span></div>
+          <div class="signal-desc">Your presence feels flat. Smile, shift your posture, take a breath — reset the emotional energy of the scene.</div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelB-3">
+        <div class="signal-card">
+          <div class="signal-name" style="color:#FF4444">🔴 RAISE_ENERGY</div>
+          <div class="signal-led">
+            <div class="led-orb" style="background:#FF4444;box-shadow:0 0 16px #FF4444;"></div>
+            <span style="color:#888">Red LED + strong buzz</span>
+          </div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Buzz:</span><span class="signal-val">1 long pulse</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Score:</span><span class="signal-val">Energy &lt; 35</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Meaning:</span><span class="signal-val" style="color:#FF4444">Critical energy drop</span></div>
+          <div class="signal-desc">This is the emergency signal. Your energy is critically low. Stand up, project your voice, and treat the next 10 seconds like the most important of the video.</div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelB-4">
+        <div class="signal-card">
+          <div class="signal-name" style="color:#5BB8FF">👁 VISUAL_RESET</div>
+          <div class="signal-led">
+            <div class="led-orb" style="background:#FF6B6B;box-shadow:0 0 12px #FF6B6B;"></div>
+            <span style="color:#888">Red LED — 3 quick flashes</span>
+          </div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Buzz:</span><span class="signal-val">3 short pulses</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Score:</span><span class="signal-val">Eye contact &lt; 40</span></div>
+          <div class="signal-row"><span class="signal-key" style="color:#555">Meaning:</span><span class="signal-val" style="color:#5BB8FF">Look at the lens</span></div>
+          <div class="signal-desc">You've broken eye contact with the camera. Your audience feels disconnected. Find the lens and hold it for 3 seconds.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Feature C: Post-Session Review ─── -->
+  <div class="feature-block fade-up" id="blockC">
+    <div class="feature-left">
+      <div class="feature-tag">
+        <span class="feature-pill">SMART INSIGHTS</span>
+      </div>
+      <h3>Know exactly where you lost them.</h3>
+      <p>After every session, Gemini reviews the full log and generates a human-readable breakdown of your best moment, biggest issue, and overall score.</p>
+      <div class="feature-tabs" id="tabsC">
+        <button class="feature-tab active" onclick="switchTab('C',0,this)">
+          <span class="tab-dot"></span> Timeline
+        </button>
+        <button class="feature-tab" onclick="switchTab('C',1,this)">
+          <span class="tab-dot"></span> Best Moment
+        </button>
+        <button class="feature-tab" onclick="switchTab('C',2,this)">
+          <span class="tab-dot"></span> Biggest Issue
+        </button>
+        <button class="feature-tab" onclick="switchTab('C',3,this)">
+          <span class="tab-dot"></span> Score
+        </button>
+      </div>
+    </div>
+    <div class="feature-right">
+      <div class="feature-panel active" id="panelC-0">
+        <div class="review-card">
+          <h4>Session Timeline — 6:42 total</h4>
+          <div class="bar-row">
+            <span class="bar-label">Eye Contact</span>
+            <div class="bar-track"><div class="bar-fill" style="width:78%;background:#00C566"></div></div>
+            <span class="bar-score">78</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Energy Level</span>
+            <div class="bar-track"><div class="bar-fill" style="width:65%;background:#FFA500"></div></div>
+            <span class="bar-score">65</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Pacing</span>
+            <div class="bar-track"><div class="bar-fill" style="width:82%;background:#00C566"></div></div>
+            <span class="bar-score">82</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Emotion</span>
+            <div class="bar-track"><div class="bar-fill" style="width:71%;background:#FFA500"></div></div>
+            <span class="bar-score">71</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Overall</span>
+            <div class="bar-track"><div class="bar-fill" style="width:74%;background:#5BB8FF"></div></div>
+            <span class="bar-score">74</span>
+          </div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelC-1">
+        <div class="dark-card">
+          <div class="dark-card-header">
+            <div class="terminal-dot td-red"></div>
+            <div class="terminal-dot td-yellow"></div>
+            <div class="terminal-dot td-green"></div>
+            <span class="terminal-title">review.py — best_moment</span>
+          </div>
+          <div class="dark-card-body">
+            <div class="dc-green">✓ Best Moment Identified</div>
+            <div>&nbsp;</div>
+            <div class="dc-white">timestamp: <span class="dc-yellow">2:14</span></div>
+            <div class="dc-white">duration:  <span class="dc-yellow">~22 seconds</span></div>
+            <div class="dc-white">score:     <span class="dc-green">94/100</span></div>
+            <div>&nbsp;</div>
+            <div class="dc-blue"># Gemini analysis:</div>
+            <div class="dc-white">"Peak energy detected. Direct</div>
+            <div class="dc-white"> eye contact, clear articulation,</div>
+            <div class="dc-white"> and enthusiastic pacing. This</div>
+            <div class="dc-green"> is your best 22 seconds."</div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelC-2">
+        <div class="dark-card">
+          <div class="dark-card-header">
+            <div class="terminal-dot td-red"></div>
+            <div class="terminal-dot td-yellow"></div>
+            <div class="terminal-dot td-green"></div>
+            <span class="terminal-title">review.py — biggest_issue</span>
+          </div>
+          <div class="dark-card-body">
+            <div class="dc-red">✗ Issue Detected</div>
+            <div>&nbsp;</div>
+            <div class="dc-white">signal_count: <span class="dc-red">RAISE_ENERGY ×4</span></div>
+            <div class="dc-white">cluster:      <span class="dc-yellow">0:00 → 0:58</span></div>
+            <div>&nbsp;</div>
+            <div class="dc-blue"># Gemini analysis:</div>
+            <div class="dc-white">"Energy critically low in first</div>
+            <div class="dc-white"> 60 seconds. Eye contact dropped</div>
+            <div class="dc-white"> 3 times. Audience likely disengaged</div>
+            <div class="dc-red"> before hook landed."</div>
+            <div>&nbsp;</div>
+            <div class="dc-yellow">Tip: Start with your best energy.</div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-panel" id="panelC-3">
+        <div class="dark-card">
+          <div class="dark-card-header">
+            <div class="terminal-dot td-red"></div>
+            <div class="terminal-dot td-yellow"></div>
+            <div class="terminal-dot td-green"></div>
+            <span class="terminal-title">review.py — overall_score</span>
+          </div>
+          <div class="dark-card-body">
+            <div class="dc-blue">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+            <div class="dc-white">&nbsp;&nbsp;NEURO-SYNC SESSION REPORT</div>
+            <div class="dc-blue">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+            <div>&nbsp;</div>
+            <div class="dc-white">Duration:    6m 42s</div>
+            <div class="dc-white">Signals:     GOOD ×14 | RAISE ×4</div>
+            <div class="dc-white">Eye contact: 78%</div>
+            <div class="dc-white">Pacing:      82/100</div>
+            <div>&nbsp;</div>
+            <div class="dc-white">Overall Score: <span class="dc-green" style="font-size:1.1rem">78 / 100</span></div>
+            <div>&nbsp;</div>
+            <div class="dc-yellow">↑ +6 pts from last session</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ HOW IT WORKS ═══ -->
+<section id="how">
+  <div class="how-bg-grid" aria-hidden="true"></div>
+  <div class="how-bg-dots" aria-hidden="true"></div>
+  <div class="creator-elements" aria-hidden="true">
+    <div class="creator-elem creator-cam-1"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-2"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-3"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-4"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-5"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-6"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-7"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-8"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-9"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-10"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-tripod-1"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-tripod-2"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-tripod-3"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-tripod-4"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-tripod-5"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-ring-1"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-2"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-3"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-4"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-5"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-6"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-7"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-mic-1"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-mic-2"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-mic-3"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-mic-4"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-mic-5"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-softbox-1"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-2"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-3"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-4"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-5"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-6"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+  </div>
+  <div class="how-header fade-up">
+    <div class="pill-badge" style="margin-bottom:20px">HOW IT WORKS</div>
+    <h2>Three steps from setup to signal.</h2>
+  </div>
+  <div class="how-timeline container" id="howTimeline">
+    <div class="how-timeline-line-fill" id="timelineLineFill"></div>
+    <div class="how-step" data-step="1">
+      <div class="how-step-node"></div>
+      <div class="how-step-content">
+        <div class="how-card">
+          <div class="how-icon"><div class="how-icon-capture"></div></div>
+          <h3>Capture</h3>
+          <p>Your webcam grabs a frame every 2 seconds. The Grove Sound Sensor samples your voice level in real time — no microphone array required.</p>
+        </div>
+      </div>
+    </div>
+    <div class="how-step" data-step="2">
+      <div class="how-step-node"></div>
+      <div class="how-step-content">
+        <div class="how-card">
+          <div class="how-icon"><div class="how-icon-analyze"><span></span><span></span><span></span></div></div>
+          <h3>Analyze</h3>
+          <p>Gemini 1.5 Flash Vision scores your energy, pacing, and eye contact from the frame + audio data. No cloud storage. No recording.</p>
+        </div>
+      </div>
+    </div>
+    <div class="how-step" data-step="3">
+      <div class="how-step-node"></div>
+      <div class="how-step-content">
+        <div class="how-card">
+          <div class="how-icon"><div class="how-icon-signal"><span></span><span></span><span></span></div></div>
+          <h3>Signal</h3>
+          <p>LED strip + buzzer fire instantly. No phone. No earbuds. No interrupting your flow — just light and sound that your body learns to respond to.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ HARDWARE ═══ -->
+<section id="hardware">
+  <div class="hardware-inner">
+    <div class="hardware-left fade-up">
+      <div class="section-label">HARDWARE</div>
+      <h2>Built on a $120 Pi setup you can assemble in an afternoon.</h2>
+      <table class="hw-table">
+        <tr>
+          <td>Raspberry Pi 4</td>
+          <td><span class="hw-dot">·</span></td>
+          <td>Main compute — runs the full pipeline locally</td>
+        </tr>
+        <tr>
+          <td>USB Webcam</td>
+          <td><span class="hw-dot">·</span></td>
+          <td>Captures frames every 2s for Gemini Vision</td>
+        </tr>
+        <tr>
+          <td>Sound Sensor</td>
+          <td><span class="hw-dot">·</span></td>
+          <td>Grove analog sensor — voice amplitude proxy</td>
+        </tr>
+        <tr>
+          <td>Light Sensor</td>
+          <td><span class="hw-dot">·</span></td>
+          <td>Detects ambient lighting for context</td>
+        </tr>
+        <tr>
+          <td>Grove Green LED</td>
+          <td><span class="hw-dot">·</span></td>
+          <td>GOOD signal — positive reinforcement flash</td>
+        </tr>
+        <tr>
+          <td>Grove Red LED</td>
+          <td><span class="hw-dot">·</span></td>
+          <td>All warning signals — solid or flashing</td>
+        </tr>
+        <tr>
+          <td>Grove Buzzer</td>
+          <td><span class="hw-dot">·</span></td>
+          <td>Tactile buzz patterns for each signal type</td>
+        </tr>
+        <tr>
+          <td>Grove Base HAT</td>
+          <td><span class="hw-dot">·</span></td>
+          <td>Plug-and-play sensor expansion for the Pi</td>
+        </tr>
+      </table>
+    </div>
+    <div class="hardware-right fade-up delay-2">
+      <div class="section-label">WIRING DIAGRAM</div>
+      <div class="wiring-card">
+        <h4>Grove Base HAT — Port Mapping</h4>
+        <div class="wire-row">
+          <span class="wire-port">A0</span>
+          <span class="wire-arrow">→</span>
+          <span class="wire-component">Sound Sensor</span>
+          <span class="wire-type">Analog</span>
+        </div>
+        <div class="wire-row">
+          <span class="wire-port">A2</span>
+          <span class="wire-arrow">→</span>
+          <span class="wire-component">Light Sensor</span>
+          <span class="wire-type">Analog</span>
+        </div>
+        <div class="wire-row">
+          <span class="wire-port">D5</span>
+          <span class="wire-arrow">→</span>
+          <span class="wire-component" style="color:#00C566">Green LED</span>
+          <span class="wire-type">Digital</span>
+        </div>
+        <div class="wire-row">
+          <span class="wire-port">D6</span>
+          <span class="wire-arrow">→</span>
+          <span class="wire-component" style="color:#FF6B6B">Red LED</span>
+          <span class="wire-type">Digital</span>
+        </div>
+        <div class="wire-row">
+          <span class="wire-port">D16</span>
+          <span class="wire-arrow">→</span>
+          <span class="wire-component">Buzzer</span>
+          <span class="wire-type">Digital</span>
+        </div>
+        <div class="wire-row">
+          <span class="wire-port">USB</span>
+          <span class="wire-arrow">→</span>
+          <span class="wire-component">Webcam (cv2)</span>
+          <span class="wire-type">USB 3.0</span>
+        </div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #1A1A1A;">
+          <div style="color:#555;font-family:monospace;font-size:0.75rem;line-height:1.8">
+            <div class="dc-blue"># Server runs on laptop</div>
+            <div class="dc-white">Pi → WiFi → FastAPI server</div>
+            <div class="dc-white">Server → Gemini API → signal</div>
+            <div class="dc-green">signal → Pi → GPIO → LED/Buzz</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ TESTIMONIAL ═══ -->
+<section id="testimonial">
+  <div class="quote-card fade-up">
+    <div class="quote-label">BUILT AT</div>
+    <p class="quote-text">
+      "You aren't analyzing a video. You're training yourself to be a better performer — in real time."
+    </p>
+    <div class="quote-divider"></div>
+    <div class="quote-attribution">◈ Neuro-Sync Team — MLH Hackathon</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ FINAL CTA ═══ -->
+<section id="cta">
+  <div class="cta-label fade-up">GET A PERSONALIZED DEMO</div>
+  <h2 class="fade-up delay-1">Ready to see Neuro-Sync<br>in action?</h2>
+  <p class="fade-up delay-2">
+    Point a camera at yourself and start recording. Real-time AI feedback, 
+    up and running in minutes.
+  </p>
+  <a href="#" class="btn-white fade-up delay-3">Talk to us</a>
+</section>
+
+<!-- ═══════════════════════════════════════════════ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">
+          <span class="dot"></span> Neuro-Sync
+        </a>
+        <div class="footer-copy">© 2024 Neuro-Sync</div>
+        <div class="footer-badges">
+          <span class="footer-badge">MLH</span>
+          <span class="footer-badge">Open Source</span>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#features">Signals</a></li>
+          <li><a href="#hardware">Hardware</a></li>
+          <li><a href="#cta">Demo</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Project</h4>
+        <ul>
+          <li><a href="#">GitHub</a></li>
+          <li><a href="#">Team</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      Neuro-Sync is an open-source hackathon project. Built with Gemini Vision, Raspberry Pi, and Grove sensors.
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════ SCRIPTS ═══ -->
+<script>
+  /* ── Hero video (optional: add public/media/background.mp4 for local dev; host on CDN for prod) ── */
+  const heroVideo = document.getElementById('heroVideo');
+  if (heroVideo) {
+    heroVideo.src = '/media/background.mp4';
+    heroVideo.onerror = () => heroVideo.style.display = 'none';
+  }
+
+  /* ── Navbar: transparent over hero, floating bar when scrolled past hero ── */
+  const navbar = document.getElementById('navbar');
+  const hero = document.getElementById('hero');
+  let lastNavOverHero = true;
+  const observerNav = new IntersectionObserver(
+    ([e]) => {
+      const overHero = e.isIntersecting;
+      if (overHero === lastNavOverHero) return;
+      lastNavOverHero = overHero;
+      navbar.classList.toggle('nav-over-hero', overHero);
+      navbar.classList.toggle('scrolled', !overHero);
+    },
+    { threshold: 0.05, rootMargin: '-64px 0px 0px 0px' }
+  );
+  if (hero) observerNav.observe(hero);
+
+  /* ── Mobile menu ── */
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+
+  /* ── IntersectionObserver fade-up ── */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  /* ── Timeline: scroll-synced steps + line fill ── */
+  const timeline = document.getElementById('howTimeline');
+  const lineFill = document.getElementById('timelineLineFill');
+  const steps = document.querySelectorAll('.how-step');
+  if (timeline && lineFill && steps.length) {
+    function updateTimelineLine() {
+      const timelineRect = timeline.getBoundingClientRect();
+      const triggerY = window.innerHeight * 0.7;
+      let lastVisibleNodeOffset = 0;
+      steps.forEach((step) => {
+        const node = step.querySelector('.how-step-node');
+        if (!node) return;
+        const nodeRect = node.getBoundingClientRect();
+        const nodeCenterOffset = nodeRect.top - timelineRect.top + nodeRect.height / 2;
+        if (nodeRect.top < triggerY) {
+          step.classList.add('visible');
+          lastVisibleNodeOffset = Math.max(lastVisibleNodeOffset, nodeCenterOffset);
+        }
+      });
+      lineFill.style.height = Math.max(0, lastVisibleNodeOffset) + 'px';
+    }
+    const timelineObserver = new IntersectionObserver(() => updateTimelineLine(), { threshold: 0 });
+    timelineObserver.observe(timeline);
+    window.addEventListener('scroll', () => {
+      if (timeline.getBoundingClientRect().bottom > 0) updateTimelineLine();
+    }, { passive: true });
+    updateTimelineLine();
+  }
+
+  /* ── Counter animation ── */
+  function animateCounter(el) {
+    const target = parseFloat(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    const decimals = parseInt(el.dataset.decimals) || 0;
+    const duration = 1800;
+    const start = performance.now();
+    function update(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const value = target * ease;
+      el.textContent = value.toFixed(decimals) + suffix;
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }
+
+  const statObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        animateCounter(e.target);
+        statObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.stat-number').forEach(el => statObserver.observe(el));
+
+  /* ── Review bar animation ── */
+  const barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('.bar-fill').forEach(b => {
+          b.style.width = b.style.width;
+        });
+        barObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.review-card').forEach(el => barObserver.observe(el));
+
+  /* ── Feature tabs ── */
+  function switchTab(block, idx, btn) {
+    const tabs = document.querySelectorAll(`#tabs${block} .feature-tab`);
+    tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+
+    const maxPanels = 6;
+    for (let i = 0; i < maxPanels; i++) {
+      const panel = document.getElementById(`panel${block}-${i}`);
+      if (panel) panel.classList.toggle('active', i === idx);
+    }
+
+    // Animate bars if switching to C-0
+    if (block === 'C' && idx === 0) {
+      setTimeout(() => {
+        document.querySelectorAll('#panelC-0 .bar-fill').forEach(b => {
+          const w = b.style.width;
+          b.style.width = '0';
+          setTimeout(() => { b.style.width = w; }, 50);
+        });
+      }, 50);
+    }
+  }
+
+  /* ── Hero canvas: full-bleed mountains + flowing river ── */
+  (function() {
+    const canvas = document.getElementById('heroCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+
+    function resize() {
+      const hero = document.getElementById('hero');
+      W = canvas.width  = hero.offsetWidth;
+      H = canvas.height = hero.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    /* ── Deterministic noise helper ── */
+    function noise(x) {
+      return Math.sin(x * 127.1) * 0.5 + Math.sin(x * 311.7) * 0.3 + Math.sin(x * 74.7) * 0.2;
+    }
+
+    /* ── Build a mountain ridge ── */
+    function makeMountain(seed, peakCount, peakHeightFrac, baseYFrac) {
+      const pts = [];
+      const segW = W / (peakCount * 2);
+      pts.push({ x: -10, y: H });
+      for (let i = 0; i <= peakCount * 2; i++) {
+        const x = i * segW;
+        const n = noise(seed + i * 0.37);
+        const isMid = i % 2 === 1;
+        const h = isMid
+          ? (0.55 + (n * 0.5 + 0.5) * 0.45) * peakHeightFrac * H
+          : (0.15 + (n * 0.5 + 0.5) * 0.25) * peakHeightFrac * H;
+        const y = H * baseYFrac - h;
+        pts.push({ x, y });
+      }
+      pts.push({ x: W + 10, y: H });
+      return pts;
+    }
+
+    /* ── Mountain layers (back → front) ── */
+    const LAYERS = [
+      { seed: 1.1, peaks: 5, heightFrac: 0.55, baseY: 0.62, colorTop: '#2a3a52', colorBot: '#1a2535' },
+      { seed: 2.3, peaks: 6, heightFrac: 0.45, baseY: 0.68, colorTop: '#1e3248', colorBot: '#152336' },
+      { seed: 3.7, peaks: 7, heightFrac: 0.38, baseY: 0.74, colorTop: '#1a2c40', colorBot: '#111e2e' },
+      { seed: 4.9, peaks: 8, heightFrac: 0.28, baseY: 0.80, colorTop: '#162538', colorBot: '#0d1a28' },
+    ];
+
+    /* ── River: a curving band from mid-left to bottom-right ── */
+    const RIVER_TOP_Y_START = 0.72;
+    const RIVER_TOP_Y_END   = 0.82;
+    const RIVER_BOT_Y_START = 0.78;
+    const RIVER_BOT_Y_END   = 1.02;
+    const RIVER_X_START     = 0.28;
+    const RIVER_X_END       = 0.72;
+
+    /* ── Stars ── */
+    const STARS = Array.from({ length: 120 }, (_, i) => ({
+      x: (noise(i * 0.13) * 0.5 + 0.5),
+      y: (noise(i * 0.27) * 0.5 + 0.5) * 0.55,
+      r: 0.4 + (noise(i * 0.51) * 0.5 + 0.5) * 1.4,
+      phase: noise(i * 0.91) * Math.PI * 2,
+    }));
+
+    /* ── Moon ── */
+    const MOON = { rx: 0.72, ry: 0.14, r: 0.038 };
+
+    let t = 0;
+
+    /* ─── DRAW SKY ─── */
+    function drawSky() {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0,    '#0b0f1a');
+      g.addColorStop(0.30, '#111827');
+      g.addColorStop(0.60, '#1a2a3a');
+      g.addColorStop(1,    '#1e3248');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    /* ─── DRAW STARS ─── */
+    function drawStars() {
+      STARS.forEach(s => {
+        const alpha = 0.35 + 0.65 * (Math.sin(t * 0.7 + s.phase) * 0.5 + 0.5);
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+        ctx.fill();
+      });
+    }
+
+    /* ─── DRAW MOON ─── */
+    function drawMoon() {
+      const mx = MOON.rx * W, my = MOON.ry * H, mr = MOON.r * Math.min(W, H);
+      // Outer glow
+      const glow = ctx.createRadialGradient(mx, my, mr * 0.3, mx, my, mr * 3.5);
+      glow.addColorStop(0, 'rgba(210,230,255,0.15)');
+      glow.addColorStop(1, 'rgba(210,230,255,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(mx, my, mr * 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      // Moon disc
+      ctx.beginPath();
+      ctx.arc(mx, my, mr, 0, Math.PI * 2);
+      ctx.fillStyle = '#ddeeff';
+      ctx.fill();
+      // Crescent shadow
+      ctx.beginPath();
+      ctx.arc(mx + mr * 0.3, my - mr * 0.05, mr * 0.82, 0, Math.PI * 2);
+      ctx.fillStyle = '#111827';
+      ctx.fill();
+    }
+
+    /* ─── DRAW MOUNTAIN LAYER ─── */
+    function drawMountainLayer(layer) {
+      const pts = makeMountain(layer.seed, layer.peaks, layer.heightFrac, layer.baseY);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i+1].x) / 2;
+        const my = (pts[i].y + pts[i+1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+      ctx.closePath();
+
+      const topY = Math.min(...pts.map(p => p.y));
+      const g = ctx.createLinearGradient(0, topY, 0, H * layer.baseY);
+      g.addColorStop(0, layer.colorTop);
+      g.addColorStop(1, layer.colorBot);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      // Snow caps on the tallest peaks
+      if (layer.heightFrac > 0.35) {
+        ctx.save();
+        ctx.clip();
+        const snowGrad = ctx.createLinearGradient(0, topY, 0, topY + H * 0.08);
+        snowGrad.addColorStop(0, 'rgba(220,235,255,0.55)');
+        snowGrad.addColorStop(1, 'rgba(220,235,255,0)');
+        ctx.fillStyle = snowGrad;
+        ctx.fillRect(0, topY, W, H * 0.10);
+        ctx.restore();
+      }
+    }
+
+    /* ─── DRAW RIVER ─── */
+    function drawRiver() {
+      // River bank shape: a curved band
+      const rxs = RIVER_X_START * W;
+      const rxe = RIVER_X_END   * W;
+
+      // Top edge of river (animated)
+      function riverTopY(x) {
+        const prog = (x - rxs) / (rxe - rxs);
+        const base = (RIVER_TOP_Y_START + prog * (RIVER_TOP_Y_END - RIVER_TOP_Y_START)) * H;
+        return base + Math.sin(x * 0.012 + t * 0.5) * H * 0.012
+                    + Math.sin(x * 0.021 - t * 0.3) * H * 0.007;
+      }
+      // Bottom edge of river
+      function riverBotY(x) {
+        const prog = (x - rxs) / (rxe - rxs);
+        const base = (RIVER_BOT_Y_START + prog * (RIVER_BOT_Y_END - RIVER_BOT_Y_START)) * H;
+        return base + Math.sin(x * 0.014 + t * 0.4 + 1) * H * 0.010
+                    + Math.sin(x * 0.019 - t * 0.25 + 2) * H * 0.006;
+      }
+
+      // River base fill
+      ctx.beginPath();
+      ctx.moveTo(rxs, riverTopY(rxs));
+      for (let x = rxs; x <= rxe; x += 3) ctx.lineTo(x, riverTopY(x));
+      for (let x = rxe; x >= rxs; x -= 3) ctx.lineTo(x, riverBotY(x));
+      ctx.closePath();
+
+      const rg = ctx.createLinearGradient(rxs, 0, rxe, 0);
+      rg.addColorStop(0,   '#0d2233');
+      rg.addColorStop(0.3, '#0e3347');
+      rg.addColorStop(0.5, '#0f4060');
+      rg.addColorStop(0.7, '#0e3347');
+      rg.addColorStop(1,   '#0d2233');
+      ctx.fillStyle = rg;
+      ctx.fill();
+
+      // Flowing water lines (horizontal ripples that scroll down)
+      const lineCount = 18;
+      for (let i = 0; i < lineCount; i++) {
+        const prog = ((i / lineCount) + t * 0.08) % 1;
+        const xL = rxs + (rxe - rxs) * 0.05;
+        const xR = rxe - (rxe - rxs) * 0.05;
+        const topY = riverTopY(xL + (xR - xL) * 0.5);
+        const botY = riverBotY(xL + (xR - xL) * 0.5);
+        const y = topY + (botY - topY) * prog;
+        const alpha = Math.sin(prog * Math.PI) * 0.22;
+        const waveAmp = (rxe - rxs) * 0.015;
+
+        ctx.beginPath();
+        for (let x = xL; x <= xR; x += 3) {
+          const wx = x + Math.sin(x * 0.03 + t * 0.9 + i) * waveAmp;
+          const wy = y + Math.sin(x * 0.025 - t * 0.6 + i * 0.7) * H * 0.008;
+          if (x === xL) ctx.moveTo(wx, wy);
+          else ctx.lineTo(wx, wy);
+        }
+        ctx.strokeStyle = `rgba(100,200,255,${alpha.toFixed(3)})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
+
+      // Moon reflection on river
+      const mx = MOON.rx * W;
+      if (mx >= rxs && mx <= rxe) {
+        const midY = (riverTopY(mx) + riverBotY(mx)) / 2;
+        const rg2 = ctx.createRadialGradient(mx, midY, 2, mx, midY, (rxe - rxs) * 0.18);
+        rg2.addColorStop(0, 'rgba(200,230,255,0.28)');
+        rg2.addColorStop(1, 'rgba(200,230,255,0)');
+        ctx.fillStyle = rg2;
+        ctx.beginPath();
+        ctx.ellipse(mx, midY, (rxe - rxs) * 0.18, H * 0.04, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Specular sparkles on water surface
+      for (let i = 0; i < 12; i++) {
+        const sx = rxs + (rxe - rxs) * (noise(i * 0.17 + t * 0.03) * 0.5 + 0.5);
+        const prog2 = (noise(i * 0.29) * 0.5 + 0.5);
+        const sy = riverTopY(sx) + (riverBotY(sx) - riverTopY(sx)) * prog2;
+        const sparkAlpha = (Math.sin(t * 2.1 + i * 1.3) * 0.5 + 0.5) * 0.35;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180,230,255,${sparkAlpha.toFixed(3)})`;
+        ctx.fill();
+      }
+    }
+
+    /* ─── DRAW FOREGROUND BANKS ─── */
+    function drawBanks() {
+      // Left bank
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      ctx.lineTo(0, H * 0.78);
+      for (let x = 0; x <= RIVER_X_START * W + 20; x += 4) {
+        const y = H * (0.78 + 0.04 * (x / (RIVER_X_START * W))) + Math.sin(x * 0.04) * H * 0.008;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(RIVER_X_START * W, H);
+      ctx.closePath();
+      const lg = ctx.createLinearGradient(0, H * 0.78, 0, H);
+      lg.addColorStop(0, '#0e1e10');
+      lg.addColorStop(1, '#0a1509');
+      ctx.fillStyle = lg;
+      ctx.fill();
+
+      // Right bank
+      ctx.beginPath();
+      ctx.moveTo(W, H);
+      ctx.lineTo(W, H * 0.78);
+      for (let x = W; x >= RIVER_X_END * W - 20; x -= 4) {
+        const prog = (W - x) / (W - RIVER_X_END * W);
+        const y = H * (0.78 + 0.04 * prog) + Math.sin(x * 0.04 + 1) * H * 0.008;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(RIVER_X_END * W, H);
+      ctx.closePath();
+      const rg = ctx.createLinearGradient(0, H * 0.78, 0, H);
+      rg.addColorStop(0, '#0e1e10');
+      rg.addColorStop(1, '#0a1509');
+      ctx.fillStyle = rg;
+      ctx.fill();
+    }
+
+    /* ─── ATMOSPHERIC HAZE ─── */
+    function drawHaze() {
+      const haze = ctx.createLinearGradient(0, H * 0.55, 0, H * 0.75);
+      haze.addColorStop(0, 'rgba(20,40,70,0)');
+      haze.addColorStop(1, 'rgba(20,40,70,0.45)');
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, H * 0.55, W, H * 0.20);
+    }
+
+    /* ─── MAIN LOOP ─── */
+    function frame() {
+      t += 0.016;
+      ctx.clearRect(0, 0, W, H);
+      drawSky();
+      drawStars();
+      drawMoon();
+      LAYERS.forEach(drawMountainLayer);
+      drawHaze();
+      drawRiver();
+      drawBanks();
+      requestAnimationFrame(frame);
+    }
+
+    frame();
+  })();
+</script>
+</body>
+</html>

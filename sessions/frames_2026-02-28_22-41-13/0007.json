@@ -1,0 +1,24 @@
+{
+  "call": 7,
+  "timestamp": "2026-02-28T22:41:26.819280",
+  "latency_ms": 1186.0,
+  "audio": {
+    "volume_rms": 0.0505,
+    "silence_ratio": 0.7716,
+    "estimated_wpm": 350,
+    "peak_volume": 0.1451,
+    "volume_variance": 2.9e-05
+  },
+  "event": {
+    "event": "VIBE_CHECK",
+    "score": 0.58,
+    "message": "Low energy",
+    "detail": "\u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591\u2591\u2591 57%",
+    "buzz": false,
+    "buzz_pattern": "single",
+    "confidence": 0.75,
+    "timestamp": 1772336486.817086,
+    "phase": "normal",
+    "reasoning": ""
+  }
+}

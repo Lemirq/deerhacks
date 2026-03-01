@@ -1,0 +1,24 @@
+{
+  "call": 9,
+  "timestamp": "2026-02-28T18:55:18.015792",
+  "latency_ms": 907.8,
+  "audio": {
+    "volume_rms": 0.0233,
+    "silence_ratio": 0.9595,
+    "estimated_wpm": 346,
+    "peak_volume": 0.1149,
+    "volume_variance": 3.4e-05
+  },
+  "event": {
+    "event": "GOOD",
+    "score": 0.75,
+    "message": "Engaged",
+    "detail": "\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591 75%",
+    "buzz": false,
+    "buzz_pattern": "single",
+    "confidence": 0.9,
+    "timestamp": 1772322918.0128782,
+    "phase": "normal",
+    "reasoning": "The creator is looking at the camera with a neutral but attentive expression and appears to be in motion."
+  }
+}
