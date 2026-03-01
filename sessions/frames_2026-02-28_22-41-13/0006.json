@@ -1,0 +1,24 @@
+{
+  "call": 6,
+  "timestamp": "2026-02-28T22:41:24.594966",
+  "latency_ms": 966.5,
+  "audio": {
+    "volume_rms": 0.0486,
+    "silence_ratio": 0.8155,
+    "estimated_wpm": 350,
+    "peak_volume": 0.1297,
+    "volume_variance": 5.4e-05
+  },
+  "event": {
+    "event": "VIBE_CHECK",
+    "score": 0.45,
+    "message": "Looks bored",
+    "detail": "\u2588\u2588\u2588\u2588\u2591\u2591\u2591\u2591\u2591\u2591 45%",
+    "buzz": false,
+    "buzz_pattern": "single",
+    "confidence": 0.8,
+    "timestamp": 1772336484.591237,
+    "phase": "normal",
+    "reasoning": ""
+  }
+}

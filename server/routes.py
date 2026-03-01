@@ -14,15 +14,44 @@ Why one endpoint?
 
 import json
 import logging
+import os
 import time
 from io import BytesIO
+from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException, Request
+from fastapi import APIRouter, File, Form, Query, UploadFile, HTTPException, Request
 from fastapi.responses import JSONResponse
 from PIL import Image
 
 from models import AudioMetrics, CoachingEvent, EventType, SessionState
 from gemini_coach import analyze
+
+# ─────────────────────────────────────────────
+# REPORT STORAGE
+# Persists session reports as JSON files under server/reports/{device_id}/
+# ─────────────────────────────────────────────
+
+REPORTS_DIR = Path(__file__).parent / "reports"
+
+
+def _save_report(device_id: str, session_id: str, report_data: dict):
+    """Save a report JSON file to disk for a given device and session."""
+    device_dir = REPORTS_DIR / device_id
+    device_dir.mkdir(parents=True, exist_ok=True)
+    report_path = device_dir / f"{session_id}.json"
+    with open(report_path, "w") as f:
+        json.dump(report_data, f, indent=2)
+    logger.info(f"Report saved: {report_path}")
+
+
+def _load_report(device_id: str, session_id: str) -> dict | None:
+    """Load a saved report from disk. Returns None if not found."""
+    report_path = REPORTS_DIR / device_id / f"{session_id}.json"
+    if not report_path.exists():
+        return None
+    with open(report_path, "r") as f:
+        return json.load(f)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -146,6 +175,7 @@ async def analyze_frame(
     audio_metrics: str        = Form(...,  description="JSON string of AudioMetrics"),
     session_id:    str        = Form("default_session", description="Session identifier"),
     audio_clip:    UploadFile = File(None, description="WAV audio clip for native audio analysis"),
+    device_id:     str        = Form(None, description="Device UUID from iOS client"),
 ):
     t_request_start = time.perf_counter()
 
@@ -169,6 +199,10 @@ async def analyze_frame(
 
     # ── 3. Get or create session state ─────────────────────────────────
     session = get_or_create_session(session_id)
+
+    # ── 3a. Store device_id if provided ──────────────────────────────
+    if device_id and not session.device_id:
+        session.device_id = device_id
 
     # ── 3b. Set recording start time on first call ───────────────────
     if session.recording_start_time == 0.0:
@@ -263,7 +297,7 @@ async def reset_session(session_id: str):
     "/session/{session_id}/report",
     summary="Get comprehensive session report",
 )
-async def session_report(session_id: str):
+async def session_report(session_id: str, device_id: Optional[str] = Query(None, description="Device UUID — if provided, overrides session device_id")):
     if session_id not in _sessions:
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
 
@@ -378,7 +412,7 @@ async def session_report(session_id: str):
             "events": [history[j].event.value for j in range(zone_start, len(history))],
         })
 
-    return {
+    report_data = {
         "session_id": session_id,
         "hook_evaluation": hook_evaluation,
         "stats": stats,
@@ -387,6 +421,64 @@ async def session_report(session_id: str):
         "problem_zones": problem_zones,
         "timeline": timeline,
     }
+
+    # ── Persist report to disk if we know the device ─────────────────
+    effective_device_id = device_id or session.device_id
+    if effective_device_id:
+        _save_report(effective_device_id, session_id, report_data)
+
+    return report_data
+
+
+# ─────────────────────────────────────────────
+# GET /reports/{device_id} — list all saved reports for a device
+# GET /reports/{device_id}/{session_id} — full saved report
+# ─────────────────────────────────────────────
+
+@router.get(
+    "/reports/{device_id}",
+    summary="List saved reports for a device (newest first)",
+)
+async def list_device_reports(device_id: str):
+    device_dir = REPORTS_DIR / device_id
+    if not device_dir.exists():
+        return []
+
+    summaries = []
+    for report_file in device_dir.glob("*.json"):
+        try:
+            with open(report_file, "r") as f:
+                data = json.load(f)
+            # Extract lightweight summary fields
+            stats = data.get("stats", {})
+            timeline = data.get("timeline", [])
+            hook_eval = data.get("hook_evaluation")
+            timestamp = timeline[0]["timestamp"] if timeline else 0.0
+            summaries.append({
+                "session_id": data.get("session_id", report_file.stem),
+                "timestamp": timestamp,
+                "avg_score": stats.get("avg_score", 0.0),
+                "hook_verdict": hook_eval.get("verdict") if hook_eval else None,
+                "total_events": stats.get("total_events", 0),
+            })
+        except Exception as e:
+            logger.warning(f"Skipping corrupt report {report_file}: {e}")
+            continue
+
+    # Sort newest first
+    summaries.sort(key=lambda s: s["timestamp"], reverse=True)
+    return summaries
+
+
+@router.get(
+    "/reports/{device_id}/{session_id}",
+    summary="Get a specific saved report for a device",
+)
+async def get_saved_report(device_id: str, session_id: str):
+    report = _load_report(device_id, session_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail=f"Report not found for device '{device_id}', session '{session_id}'.")
+    return report
 
 
 # ─────────────────────────────────────────────

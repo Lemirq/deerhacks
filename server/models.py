@@ -164,6 +164,7 @@ class SessionState:
         self.hook_evaluated: bool = False
         self.hook_buffer_image: bytes = b""   # last image captured during hook
         self.hook_buffer_audio: bytes = b""   # last audio captured during hook
+        self.device_id: Optional[str] = None  # device UUID from iOS client
 
     def record(self, event: CoachingEvent):
         self.history.append(event)

@@ -1,0 +1,24 @@
+{
+  "call": 3,
+  "timestamp": "2026-02-28T22:41:18.968592",
+  "latency_ms": 1358.5,
+  "audio": {
+    "volume_rms": 0.0472,
+    "silence_ratio": 0.8165,
+    "estimated_wpm": 350,
+    "peak_volume": 0.1242,
+    "volume_variance": 2.4e-05
+  },
+  "event": {
+    "event": "HOOK_WEAK",
+    "score": 0.575,
+    "message": "boring start",
+    "detail": "\u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591\u2591\u2591 57%",
+    "buzz": true,
+    "buzz_pattern": "double",
+    "confidence": 0.9,
+    "timestamp": 1772336478.966076,
+    "phase": "hook",
+    "reasoning": "Audio: Ugh, another one of these, next. | Visual: This guy's face is wild, I gotta see what happens next."
+  }
+}
