@@ -1,0 +1,24 @@
+{
+  "call": 7,
+  "timestamp": "2026-02-28T18:55:14.028463",
+  "latency_ms": 939.9,
+  "audio": {
+    "volume_rms": 0.0226,
+    "silence_ratio": 0.9797,
+    "estimated_wpm": 26,
+    "peak_volume": 0.0805,
+    "volume_variance": 9e-06
+  },
+  "event": {
+    "event": "VIBE_CHECK",
+    "score": 0.58,
+    "message": "Low energy",
+    "detail": "\u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591\u2591\u2591 57%",
+    "buzz": true,
+    "buzz_pattern": "double",
+    "confidence": 0.75,
+    "timestamp": 1772322914.024058,
+    "phase": "normal",
+    "reasoning": "The creator's facial expression appears flat and disengaged, with a lack of direct eye contact, indicating low visual energy."
+  }
+}

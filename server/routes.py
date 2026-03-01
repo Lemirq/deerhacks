@@ -145,6 +145,7 @@ async def analyze_frame(
     frame:         UploadFile = File(...,  description="JPEG webcam frame"),
     audio_metrics: str        = Form(...,  description="JSON string of AudioMetrics"),
     session_id:    str        = Form("default_session", description="Session identifier"),
+    audio_clip:    UploadFile = File(None, description="WAV audio clip for native audio analysis"),
 ):
     t_request_start = time.perf_counter()
 
@@ -156,17 +157,29 @@ async def analyze_frame(
 
     image_bytes = validate_and_preprocess_image(raw_image_bytes)
 
+    # ── 1b. Read audio clip if provided ─────────────────────────────────
+    audio_bytes = None
+    if audio_clip is not None:
+        audio_bytes = await audio_clip.read()
+        if not audio_bytes:
+            audio_bytes = None
+
     # ── 2. Parse audio metrics ──────────────────────────────────────────
     audio = parse_audio_metrics(audio_metrics)
 
     # ── 3. Get or create session state ─────────────────────────────────
     session = get_or_create_session(session_id)
 
+    # ── 3b. Set recording start time on first call ───────────────────
+    if session.recording_start_time == 0.0:
+        session.recording_start_time = time.time()
+
     # ── 4. Run Gemini inference ─────────────────────────────────────────
     event = await analyze(
         image_bytes=image_bytes,
         audio=audio,
         session=session,
+        audio_bytes=audio_bytes,
     )
 
     # ── 5. Log timing ────────────────────────────────────────────────────
@@ -238,6 +251,142 @@ async def reset_session(session_id: str):
         logger.info(f"Session reset: {session_id}")
         return {"message": f"Session '{session_id}' cleared."}
     return {"message": f"Session '{session_id}' did not exist — nothing to clear."}
+
+
+# ─────────────────────────────────────────────
+# GET /session/{session_id}/report
+# Comprehensive post-session report with hook evaluation,
+# full timeline, stats, best/worst moments, and problem zones.
+# ─────────────────────────────────────────────
+
+@router.get(
+    "/session/{session_id}/report",
+    summary="Get comprehensive session report",
+)
+async def session_report(session_id: str):
+    if session_id not in _sessions:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+
+    session = _sessions[session_id]
+    history = session.history
+
+    if not history:
+        return {"session_id": session_id, "events": 0, "message": "No events recorded yet."}
+
+    # ── Hook evaluation summary ──────────────────────────────────────
+    hook_events = session.hook_results
+    hook_evaluation = None
+    if hook_events:
+        hook_scores = [e.score for e in hook_events]
+        hook_avg = sum(hook_scores) / len(hook_scores)
+        has_weak = any(e.event == EventType.HOOK_WEAK for e in hook_events)
+        hook_evaluation = {
+            "verdict": "WEAK" if has_weak else "STRONG",
+            "avg_score": round(hook_avg, 3),
+            "evaluations": [
+                {
+                    "event": e.event.value,
+                    "score": e.score,
+                    "message": e.message,
+                    "reasoning": e.reasoning,
+                    "timestamp": e.timestamp,
+                }
+                for e in hook_events
+            ],
+        }
+
+    # ── Full timeline ────────────────────────────────────────────────
+    timeline = []
+    for i, e in enumerate(history):
+        frame_index = i + 1
+        timeline.append({
+            "frame_index": frame_index,
+            "frame_files": f"{frame_index:04d}.jpg / {frame_index:04d}.wav / {frame_index:04d}.json",
+            "event": e.event.value,
+            "score": e.score,
+            "message": e.message,
+            "phase": e.phase,
+            "reasoning": e.reasoning,
+            "confidence": e.confidence,
+            "buzz": e.buzz,
+            "timestamp": e.timestamp,
+        })
+
+    # ── Overall stats ────────────────────────────────────────────────
+    all_scores = [e.score for e in history]
+    normal_events = [e for e in history if e.phase == "normal"]
+    normal_scores = [e.score for e in normal_events] if normal_events else all_scores
+
+    counts = {}
+    for et in EventType:
+        counts[et.value] = sum(1 for h in history if h.event == et)
+
+    stats = {
+        "total_events": len(history),
+        "avg_score": round(sum(all_scores) / len(all_scores), 3),
+        "min_score": round(min(all_scores), 3),
+        "max_score": round(max(all_scores), 3),
+        "normal_avg_score": round(sum(normal_scores) / len(normal_scores), 3) if normal_scores else 0.0,
+        "event_counts": counts,
+    }
+
+    # ── Best / worst moments ─────────────────────────────────────────
+    best_idx = max(range(len(history)), key=lambda i: history[i].score)
+    worst_idx = min(range(len(history)), key=lambda i: history[i].score)
+    best_moments = {
+        "frame_index": best_idx + 1,
+        "event": history[best_idx].event.value,
+        "score": history[best_idx].score,
+        "message": history[best_idx].message,
+        "reasoning": history[best_idx].reasoning,
+    }
+    worst_moments = {
+        "frame_index": worst_idx + 1,
+        "event": history[worst_idx].event.value,
+        "score": history[worst_idx].score,
+        "message": history[worst_idx].message,
+        "reasoning": history[worst_idx].reasoning,
+    }
+
+    # ── Problem zones (consecutive low-score stretches) ──────────────
+    problem_zones = []
+    LOW_THRESHOLD = 0.60
+    zone_start = None
+    for i, e in enumerate(history):
+        if e.score < LOW_THRESHOLD:
+            if zone_start is None:
+                zone_start = i
+        else:
+            if zone_start is not None and (i - zone_start) >= 2:
+                zone_scores = [history[j].score for j in range(zone_start, i)]
+                problem_zones.append({
+                    "start_frame": zone_start + 1,
+                    "end_frame": i,
+                    "length": i - zone_start,
+                    "avg_score": round(sum(zone_scores) / len(zone_scores), 3),
+                    "events": [history[j].event.value for j in range(zone_start, i)],
+                })
+            zone_start = None
+    # Handle zone that extends to end
+    if zone_start is not None and (len(history) - zone_start) >= 2:
+        zone_scores = [history[j].score for j in range(zone_start, len(history))]
+        problem_zones.append({
+            "start_frame": zone_start + 1,
+            "end_frame": len(history),
+            "length": len(history) - zone_start,
+            "avg_score": round(sum(zone_scores) / len(zone_scores), 3),
+            "events": [history[j].event.value for j in range(zone_start, len(history))],
+        })
+
+    return {
+        "session_id": session_id,
+        "hook_evaluation": hook_evaluation,
+        "stats": stats,
+        "best_moment": best_moments,
+        "worst_moment": worst_moments,
+        "problem_zones": problem_zones,
+        "timeline": timeline,
+    }
 
 
 # ─────────────────────────────────────────────

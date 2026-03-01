@@ -25,6 +25,8 @@ class EventType(str, Enum):
     VIBE_CHECK   = "VIBE_CHECK"    # Face is flat, energy doesn't match words
     RAISE_ENERGY = "RAISE_ENERGY"  # Vocal energy dropping, posture bad
     VISUAL_RESET = "VISUAL_RESET"  # Completely static — no movement
+    HOOK_GOOD    = "HOOK_GOOD"     # Hook grabs attention — doom-scroller would stay
+    HOOK_WEAK    = "HOOK_WEAK"     # Hook is weak — doom-scroller would scroll past
 
 
 # ─────────────────────────────────────────────
@@ -103,6 +105,14 @@ class CoachingEvent(BaseModel):
         default_factory=time.time,
         description="Unix timestamp of when this event was generated."
     )
+    phase: str = Field(
+        default="normal",
+        description="Session phase when this event was generated: 'hook' or 'normal'."
+    )
+    reasoning: str = Field(
+        default="",
+        description="Gemini's reasoning for this classification."
+    )
 
     def score_bar(self) -> str:
         """Renders a 10-char ASCII bar for the LCD line 2. e.g. '████████░░ 81%'"""
@@ -137,13 +147,23 @@ class SessionState:
         EventType.VIBE_CHECK:   10.0,  # Give them time to adjust expression
         EventType.RAISE_ENERGY: 10.0,  # Same
         EventType.VISUAL_RESET: 12.0,  # Movement changes take time
+        EventType.HOOK_GOOD:    0.0,   # Hook events are one-shot, no cooldown
+        EventType.HOOK_WEAK:    0.0,
     }
+
+    HOOK_DURATION = 3.0  # seconds
 
     def __init__(self):
         self.history: list[CoachingEvent] = []
         self.last_event_time: dict[EventType, float] = {}
         self.consecutive_good: int = 0
         self.consecutive_bad:  int = 0
+        self.phase: str = "hook"
+        self.recording_start_time: float = 0.0
+        self.hook_results: list[CoachingEvent] = []
+        self.hook_evaluated: bool = False
+        self.hook_buffer_image: bytes = b""   # last image captured during hook
+        self.hook_buffer_audio: bytes = b""   # last audio captured during hook
 
     def record(self, event: CoachingEvent):
         self.history.append(event)
@@ -175,6 +195,13 @@ class SessionState:
         if delta < -0.08:
             return "falling"
         return "stable"
+
+    def update_phase(self):
+        """Transitions from 'hook' to 'normal' after HOOK_DURATION seconds elapsed."""
+        if self.phase == "hook" and self.recording_start_time > 0:
+            elapsed = time.time() - self.recording_start_time
+            if elapsed >= self.HOOK_DURATION:
+                self.phase = "normal"
 
     def average_score(self, last_n: int = 10) -> float:
         if not self.history:

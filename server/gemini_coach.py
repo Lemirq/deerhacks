@@ -1,32 +1,24 @@
 """
-gemini_coach.py — Gemini 1.5 Flash Vision inference engine.
+gemini_coach.py — Gemini multimodal inference engine.
 
-This is the core AI brain of Neuro-Sync. It receives:
-  - A JPEG frame from the webcam (bytes)
-  - AudioMetrics from the Pi's sound sensor
-  - The current SessionState (for smarter context-aware decisions)
+Uses the Gemini Live API with native audio model to actually HEAR
+the creator's tone, pitch, emotion, and pacing — not just computed numbers.
 
-And returns a CoachingEvent telling the Pi what to show + whether to buzz.
-
-How Gemini is being used here:
-  We're NOT doing simple threshold detection ("if wpm < 80 then SPEED_UP").
-  We're asking Gemini to reason across MULTIPLE signals simultaneously:
-    - What does the face look like? (visual)
-    - Does facial energy match the audio energy? (cross-modal)
-    - Is the pacing appropriate for what the body language suggests? (contextual)
-  
-  This catches things a simple rule system would miss — like a creator who's
-  speaking at normal WPM but their face has completely checked out.
+Model: gemini-2.5-flash-native-audio (via bidiGenerateContent / Live API)
+Fallback: gemini-2.5-flash-lite (regular generateContent, vision only)
 """
 
+import asyncio
 import json
 import os
 import time
-import base64
+import io
+import wave
 import logging
 from typing import Optional
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 
 from models import AudioMetrics, CoachingEvent, EventType, SessionState
@@ -34,263 +26,704 @@ from models import AudioMetrics, CoachingEvent, EventType, SessionState
 load_dotenv()
 logger = logging.getLogger(__name__)
 
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+LIVE_MODEL = "gemini-2.5-flash-native-audio-latest"
+VISION_MODEL = "gemini-2.5-flash-lite"
+
 # ─────────────────────────────────────────────
-# GEMINI SETUP
+# SYSTEM INSTRUCTION (set once at session connect)
 # ─────────────────────────────────────────────
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+AUDIO_SYSTEM_INSTRUCTION = """You are an expert real-time audio coach for short-form video creators (TikTok, Reels, YouTube Shorts).
 
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    generation_config=genai.GenerationConfig(
-        temperature=0.2,        # Low temp = consistent, predictable JSON output
-        max_output_tokens=256,  # We only need a small JSON blob back
-        response_mime_type="application/json",  # Tell Gemini to return pure JSON
-    )
+You receive an audio clip of the creator speaking. Analyze ONLY what you hear.
+
+=== WHAT TO LISTEN FOR ===
+- Vocal ENERGY — excited, confident, flat, bored?
+- Speaking PACE — rushing, dragging, natural rhythm?
+- TONE — enthusiastic, hesitant, monotone, dynamic?
+- PAUSES — awkward silences vs natural breathing?
+- PITCH VARIATION — expressive vs flat delivery?
+- EMOTION — genuinely engaged or going through motions?
+
+=== EVENT TYPES ===
+GOOD         → Sounds engaged. Energy is good. Pace is natural.
+SPEED_UP     → Speaking too slowly, too many pauses, long silences.
+RAISE_ENERGY → Voice shows low energy. Flat tone, quiet, monotone.
+
+=== CRITICAL RULE ===
+If the creator sounds excited, happy, and energetic — that IS good. Return GOOD.
+Do NOT second-guess genuine enthusiasm. Trust what you hear.
+
+=== OUTPUT ===
+Always respond with ONLY a JSON object. No markdown. No explanation. No extra text.
+{
+  "event": "<GOOD|SPEED_UP|RAISE_ENERGY>",
+  "score": <float 0.0-1.0>,
+  "message": "<max 14 chars>",
+  "buzz": <true|false>,
+  "buzz_pattern": "<single|double|triple|long>",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<one sentence>"
+}
+
+Buzz rules: GOOD → false. SPEED_UP → triple. RAISE_ENERGY → long.
+Scoring: 0.85-1.0 excellent, 0.70-0.84 good, 0.55-0.69 issues, 0.40-0.54 bad, <0.40 very bad."""
+
+VISION_SYSTEM_INSTRUCTION = """You are an expert real-time visual coach for short-form video creators (TikTok, Reels, YouTube Shorts).
+
+You receive a camera frame showing the creator. Analyze ONLY what you see.
+
+=== WHAT TO LOOK FOR ===
+- Facial EXPRESSION — smiling, flat, engaged, checked out?
+- EYE CONTACT — looking at camera or away?
+- BODY LANGUAGE — upright and energetic, or slouching?
+- MOVEMENT — dynamic or completely static?
+
+=== EVENT TYPES ===
+GOOD         → Looks engaged. Expression is lively.
+VIBE_CHECK   → Face looks flat/bored. Low visual energy.
+VISUAL_RESET → Body completely static too long. Need movement.
+
+=== OUTPUT ===
+Always respond with ONLY a JSON object. No markdown. No explanation. No extra text.
+{
+  "event": "<GOOD|VIBE_CHECK|VISUAL_RESET>",
+  "score": <float 0.0-1.0>,
+  "message": "<max 14 chars>",
+  "buzz": <true|false>,
+  "buzz_pattern": "<single|double|triple|long>",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<one sentence>"
+}
+
+Buzz rules: GOOD/VISUAL_RESET → false. VIBE_CHECK → double.
+Scoring: 0.85-1.0 excellent, 0.70-0.84 good, 0.55-0.69 issues, 0.40-0.54 bad, <0.40 very bad."""
+
+
+# ─────────────────────────────────────────────
+# HOOK EVALUATION PROMPTS (first 3 seconds)
+# Uses one-shot generateContent, NOT the persistent Live session
+# ─────────────────────────────────────────────
+
+HOOK_AUDIO_SYSTEM_INSTRUCTION = """You are a bored doom-scroller on TikTok/Reels. You have ZERO patience. You decide in 1-2 seconds whether to keep watching or scroll past.
+
+You just heard the OPENING of a short-form video. Judge it ONLY as a first impression.
+
+=== WHAT MAKES YOU STAY (HOOK_GOOD) ===
+- Immediate ENERGY — voice hits hard from the first syllable
+- CURIOSITY GAP — says something that makes you NEED to hear more
+- CONFIDENCE — sounds like they know exactly what they're about to say
+- PACE — punchy, no hesitation, no throat-clearing
+
+=== WHAT MAKES YOU SCROLL (HOOK_WEAK) ===
+- Slow start — "um", "so", "hey guys" with no energy
+- Flat tone — sounds like they're reading a grocery list
+- Hesitation — pauses, false starts, uncertain voice
+- Generic opener — nothing surprising or attention-grabbing
+
+=== OUTPUT ===
+Respond with ONLY a JSON object:
+{
+  "event": "<HOOK_GOOD|HOOK_WEAK>",
+  "score": <float 0.0-1.0>,
+  "message": "<max 14 chars>",
+  "buzz": <true|false>,
+  "buzz_pattern": "<single|double|triple|long>",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<one sentence as a doom-scroller>"
+}
+
+Buzz rules: HOOK_GOOD → false. HOOK_WEAK → double.
+Scoring: 0.85+ would definitely stay, 0.70-0.84 might stay, 0.55-0.69 probably scroll, <0.55 instant scroll."""
+
+HOOK_VISION_SYSTEM_INSTRUCTION = """You are a bored doom-scroller on TikTok/Reels. You have ZERO patience. You decide in 1-2 seconds whether to keep watching or scroll past.
+
+You see the OPENING FRAME of a short-form video. Judge it ONLY as a first visual impression.
+
+=== WHAT MAKES YOU STAY (HOOK_GOOD) ===
+- Direct EYE CONTACT with the camera — feels personal
+- Expressive FACE — excitement, surprise, intensity
+- MOVEMENT — dynamic, not a frozen statue
+- Good FRAMING — centered, well-lit, intentional
+
+=== WHAT MAKES YOU SCROLL (HOOK_WEAK) ===
+- Looking away from camera — no connection
+- Dead face — no expression, no energy
+- Completely static — looks like a thumbnail, not a video
+- Bad framing — too far, too close, weird angle
+
+=== OUTPUT ===
+Respond with ONLY a JSON object:
+{
+  "event": "<HOOK_GOOD|HOOK_WEAK>",
+  "score": <float 0.0-1.0>,
+  "message": "<max 14 chars>",
+  "buzz": <true|false>,
+  "buzz_pattern": "<single|double|triple|long>",
+  "confidence": <float 0.0-1.0>,
+  "reasoning": "<one sentence as a doom-scroller>"
+}
+
+Buzz rules: HOOK_GOOD → false. HOOK_WEAK → double.
+Scoring: 0.85+ would definitely stay, 0.70-0.84 might stay, 0.55-0.69 probably scroll, <0.55 instant scroll."""
+
+HOOK_FALLBACK = CoachingEvent(
+    event=EventType.HOOK_GOOD,
+    score=0.65,
+    message="HOOK EVAL...",
+    detail="",
+    buzz=False,
+    buzz_pattern="single",
+    confidence=0.0,
+    phase="hook",
+    reasoning="Hook evaluation in progress",
 )
 
 
 # ─────────────────────────────────────────────
-# PROMPT BUILDER
-# The prompt is dynamically built each call so it includes
-# live context: audio metrics, session trend, cooldown state
+# LIVE API SESSION MANAGER
 # ─────────────────────────────────────────────
 
-def _build_prompt(audio: AudioMetrics, session: SessionState) -> str:
+class LiveCoach:
+    """Maintains a persistent Live API session for native audio analysis."""
+
+    def __init__(self):
+        self._session = None
+        self._ctx = None
+        self._lock = asyncio.Lock()
+
+    async def _connect(self):
+        """Open a new Live API WebSocket session."""
+        # Clean up old session
+        if self._ctx:
+            try:
+                await self._ctx.__aexit__(None, None, None)
+            except Exception:
+                pass
+
+        config = types.LiveConnectConfig(
+            response_modalities=["TEXT"],
+            system_instruction=types.Content(
+                parts=[types.Part.from_text(text=AUDIO_SYSTEM_INSTRUCTION)]
+            ),
+        )
+
+        self._ctx = client.aio.live.connect(model=LIVE_MODEL, config=config)
+        self._session = await self._ctx.__aenter__()
+        logger.info(f"Live session connected to {LIVE_MODEL}")
+
+    async def analyze(self, image_bytes: bytes, audio_wav_bytes: bytes, turn_prompt: str) -> str:
+        """
+        Send audio + context through the Live session.
+        Native audio model only accepts audio — no image input.
+        Returns the raw text response from Gemini.
+        """
+        async with self._lock:
+            try:
+                if self._session is None:
+                    await self._connect()
+
+                # Convert WAV to raw PCM (Live API wants raw PCM, not WAV)
+                pcm_bytes = self._wav_to_pcm(audio_wav_bytes)
+
+                # Send audio first (native audio model requires audio)
+                await self._session.send(
+                    input={"data": pcm_bytes, "mime_type": "audio/pcm;rate=16000"},
+                )
+
+                # Send context prompt and end turn
+                await self._session.send(
+                    input=turn_prompt,
+                    end_of_turn=True,
+                )
+
+                # Collect response text
+                text = ""
+                async for msg in self._session.receive():
+                    if msg.text:
+                        text += msg.text
+
+                return text
+
+            except Exception as e:
+                logger.error(f"Live session error: {type(e).__name__}: {e}")
+                # Reset session so next call reconnects
+                self._session = None
+                self._ctx = None
+                raise
+
+    async def close(self):
+        if self._ctx:
+            try:
+                await self._ctx.__aexit__(None, None, None)
+            except Exception:
+                pass
+            self._session = None
+            self._ctx = None
+
+    @staticmethod
+    def _wav_to_pcm(wav_bytes: bytes) -> bytes:
+        """Extract raw PCM int16 data from WAV bytes."""
+        with wave.open(io.BytesIO(wav_bytes)) as wf:
+            return wf.readframes(wf.getnframes())
+
+
+# Singleton live coach
+_live_coach = LiveCoach()
+
+
+# ─────────────────────────────────────────────
+# PER-TURN PROMPT (session context only)
+# ─────────────────────────────────────────────
+
+def _build_turn_prompt(session: SessionState) -> str:
     trend = session.recent_score_trend()
-    avg   = session.average_score()
+    avg = session.average_score()
     consecutive_bad = session.consecutive_bad
 
-    # Build a context hint so Gemini knows what's already been flagged
-    # This prevents Gemini from ignoring a problem just because it's persistent
-    context_hint = ""
+    context = f"Session avg score: {avg:.2f} | Trend: {trend}"
     if consecutive_bad >= 3:
-        context_hint = f"Note: The creator has received {consecutive_bad} non-GOOD events in a row. Score trend is {trend}. Be direct."
-    elif trend == "rising":
-        context_hint = "Note: Score has been improving recently. Acknowledge if things look good."
-    elif trend == "falling":
-        context_hint = "Note: Score has been declining. Be specific about what's dropping."
+        context += f" | {consecutive_bad} non-GOOD events in a row — be direct."
 
-    # Interpret the audio numbers into plain English for Gemini
-    # This gives the model a pre-computed reading to reason about
-    wpm_note = (
-        "very slow (under 70 wpm)" if audio.estimated_wpm < 70 else
-        "slow (70-85 wpm)"         if audio.estimated_wpm < 85 else
-        "good pace (85-150 wpm)"   if audio.estimated_wpm < 150 else
-        "very fast (over 150 wpm)"
-    )
-    volume_note = (
-        "nearly silent"  if audio.volume_rms < 0.08 else
-        "quiet"          if audio.volume_rms < 0.18 else
-        "normal volume"  if audio.volume_rms < 0.55 else
-        "loud"
-    )
-    silence_note = (
-        "talking almost continuously" if audio.silence_ratio < 0.15 else
-        "occasional pauses (normal)"  if audio.silence_ratio < 0.35 else
-        "lots of pauses (too many)"   if audio.silence_ratio < 0.55 else
-        "mostly silent (barely talking)"
-    )
-    expressiveness = (
-        "very monotone delivery (low volume variance)" if audio.volume_variance < 0.005 else
-        "slightly flat delivery"                       if audio.volume_variance < 0.015 else
-        "expressive delivery (good variance)"
-    )
-
-    return f"""You are an expert real-time coaching system for short-form video creators (TikTok, Reels, YouTube Shorts).
-
-Analyze the provided camera frame and audio data. Return a single JSON object — nothing else.
-
-=== AUDIO DATA (from wrist mic sensor) ===
-- Pace: {wpm_note} ({audio.estimated_wpm} wpm)
-- Volume: {volume_note} (rms={audio.volume_rms:.3f})
-- Silence: {silence_note} ({audio.silence_ratio:.1%} of last 2 seconds was silent)
-- Expressiveness: {expressiveness} (variance={audio.volume_variance:.4f})
-- Peak volume this window: {audio.peak_volume:.3f}
-
-=== SESSION CONTEXT ===
-- Session avg score so far: {avg:.2f}
-- Score trend (last 3 reads): {trend}
-{context_hint}
-
-=== YOUR TASK ===
-Look at the face and body in the frame. Cross-reference with the audio data above.
-Determine the single most important coaching signal RIGHT NOW.
-
-Choose ONE event type from this list. Pick the MOST URGENT issue — don't pick GOOD if there's a real problem:
-
-GOOD         → Face engaged, eyes forward, energy matches or exceeds the audio energy. Pacing is normal. Nothing to fix.
-SPEED_UP     → Pacing is too slow OR there are too many pauses. Audio says slow/silent. Creator needs to trim filler and push forward.
-VIBE_CHECK   → Audio pace/volume seems okay BUT face looks flat, bored, or disconnected. Energy mismatch between audio and visual.
-RAISE_ENERGY → Both face AND audio show low energy. Creator is physically deflating — slouching, looking away, voice going quiet.
-VISUAL_RESET → Creator has been completely static — no body movement, same position, no visual dynamism. Need to shift frame or move.
-
-=== OUTPUT FORMAT ===
-Return ONLY this JSON. No markdown. No explanation:
-{{
-  "event": "<one of the 5 event types above>",
-  "score": <float 0.0-1.0 — how well the creator is performing RIGHT NOW>,
-  "message": "<max 14 chars — shown on physical LCD screen>",
-  "buzz": <true if this needs an audible alert, false if not>,
-  "buzz_pattern": "<single | double | triple | long>",
-  "confidence": <float 0.0-1.0 — how confident you are in this classification>,
-  "reasoning": "<one sentence explaining what you saw>"
-}}
-
-=== SCORING GUIDE ===
-0.85-1.0 → Creator is excellent. Energy high, engaged, good pace.
-0.70-0.84 → Good but minor issues. Still mostly on track.
-0.55-0.69 → Noticeable problems. Audience attention at risk.
-0.40-0.54 → Clear issues. Something needs to change now.
-0.00-0.39 → Multiple things wrong simultaneously.
-
-=== LCD MESSAGE EXAMPLES (14 chars max) ===
-GOOD:         "GREAT ENERGY!", "IN THE ZONE!", "NAILED IT!"
-SPEED_UP:     "SPEED UP!", "CUT THE PAUSE", "KEEP MOVING!"
-VIBE_CHECK:   "SHOW IT!", "WAKE UP FACE", "MATCH ENERGY!"
-RAISE_ENERGY: "MORE ENERGY!", "CHIN UP LOUD", "PROJECT MORE"
-VISUAL_RESET: "MOVE AROUND!", "CHANGE ANGLE", "STEP CLOSER!"
-
-=== BUZZ RULES ===
-- GOOD → buzz=false always
-- VISUAL_RESET → buzz=false (they're talking, don't interrupt)
-- SPEED_UP, VIBE_CHECK, RAISE_ENERGY → buzz=true
-- buzz_pattern: "triple" for SPEED_UP, "double" for VIBE_CHECK, "long" for RAISE_ENERGY
-"""
+    return f"[Context: {context}] Analyze this frame and audio clip. Return JSON only."
 
 
 # ─────────────────────────────────────────────
-# SAFE JSON PARSER
-# Gemini sometimes wraps output in ```json ``` even with response_mime_type set.
-# This handles all the edge cases.
+# JSON PARSER
 # ─────────────────────────────────────────────
 
 def _parse_gemini_response(text: str) -> dict:
     text = text.strip()
 
-    # Strip markdown fences if present
+    # Strip markdown fences
     if text.startswith("```"):
         lines = text.split("\n")
-        # Remove first line (```json or ```) and last line (```)
         inner = lines[1:-1] if lines[-1].strip() == "```" else lines[1:]
         text = "\n".join(inner).strip()
 
-    parsed = json.loads(text)  # Let this raise — caller handles it
+    # Try to find JSON in the text
+    start = text.find("{")
+    end = text.rfind("}") + 1
+    if start >= 0 and end > start:
+        text = text[start:end]
 
-    # Validate all required keys exist
-    required = {"event", "score", "message", "buzz", "buzz_pattern", "confidence"}
+    parsed = json.loads(text)
+
+    required = {"event", "score", "message"}
     missing = required - parsed.keys()
     if missing:
-        raise ValueError(f"Gemini response missing keys: {missing}")
+        raise ValueError(f"Missing keys: {missing}")
 
-    # Validate event is a known type
+    # Fill defaults for optional fields
+    parsed.setdefault("buzz", False)
+    parsed.setdefault("buzz_pattern", "single")
+    parsed.setdefault("confidence", 0.8)
+
     if parsed["event"] not in [e.value for e in EventType]:
-        raise ValueError(f"Unknown event type: {parsed['event']}")
+        raise ValueError(f"Unknown event: {parsed['event']}")
 
-    # Clamp score and confidence to valid range
-    parsed["score"]      = max(0.0, min(1.0, float(parsed["score"])))
+    parsed["score"] = max(0.0, min(1.0, float(parsed["score"])))
     parsed["confidence"] = max(0.0, min(1.0, float(parsed["confidence"])))
-
-    # Truncate message to 14 chars (LCD line 1 is 16 but we want padding)
     parsed["message"] = str(parsed["message"])[:14]
 
     return parsed
 
 
 # ─────────────────────────────────────────────
-# FALLBACK EVENTS
-# Used when Gemini fails (API error, rate limit, bad JSON, timeout)
-# Degrade gracefully — don't crash the demo
+# FALLBACK
 # ─────────────────────────────────────────────
 
-FALLBACK_EVENTS = {
-    # If we can't reach Gemini, return GOOD so we don't spam false alerts
-    "default": CoachingEvent(
-        event=EventType.GOOD,
-        score=0.70,
-        message="CONNECTING...",
-        detail="",
-        buzz=False,
-        buzz_pattern="single",
-        confidence=0.0
-    )
-}
+FALLBACK = CoachingEvent(
+    event=EventType.GOOD,
+    score=0.70,
+    message="CONNECTING...",
+    detail="",
+    buzz=False,
+    buzz_pattern="single",
+    confidence=0.0
+)
 
-
-# ─────────────────────────────────────────────
-# COOLDOWN OVERRIDE
-# Even if Gemini says to fire an event, check if it's been
-# suppressed by the session cooldown manager first
-# ─────────────────────────────────────────────
 
 def _apply_cooldown(event: CoachingEvent, session: SessionState) -> CoachingEvent:
-    """
-    If the same event was fired very recently, suppress the buzz but
-    still update the LCD message and score. This way the creator still
-    sees the issue on screen without getting constantly buzzed.
-    """
     if session.is_on_cooldown(event.event):
         return CoachingEvent(
-            event=event.event,
-            score=event.score,
-            message=event.message,
-            detail=event.detail,
-            buzz=False,           # Suppress buzz — they already know
-            buzz_pattern="single",
-            confidence=event.confidence,
-            timestamp=event.timestamp
+            event=event.event, score=event.score, message=event.message,
+            detail=event.detail, buzz=False, buzz_pattern="single",
+            confidence=event.confidence, timestamp=event.timestamp
         )
     return event
 
 
 # ─────────────────────────────────────────────
-# MAIN INFERENCE FUNCTION
-# This is the function called by routes.py on every request
+# VISION-ONLY FALLBACK (when no audio)
 # ─────────────────────────────────────────────
+
+async def _analyze_vision_only(image_bytes: bytes, session: SessionState) -> CoachingEvent:
+    """Fallback: use regular generateContent with vision model when no audio."""
+    prompt = f"""{VISION_SYSTEM_INSTRUCTION}
+
+Session context: avg={session.average_score():.2f}, trend={session.recent_score_trend()}
+
+Analyze this frame now. Return ONLY the JSON object."""
+
+    image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
+
+    response = await client.aio.models.generate_content(
+        model=VISION_MODEL,
+        contents=[prompt, image_part],
+        config=types.GenerateContentConfig(
+            temperature=0.2,
+            max_output_tokens=256,
+            response_mime_type="application/json",
+        ),
+    )
+
+    text = ""
+    if response.candidates and response.candidates[0].content:
+        for part in response.candidates[0].content.parts:
+            if part.text:
+                text += part.text
+
+    return text
+
+
+# ─────────────────────────────────────────────
+# MAIN ENTRY POINT
+# ─────────────────────────────────────────────
+
+def _merge_results(audio_raw: dict, vision_raw: dict) -> dict:
+    """
+    Merge audio (native) and vision analysis into one coaching event.
+    Audio is weighted higher (0.6) since tone/energy is more important for creators.
+    """
+    audio_score = audio_raw.get("score", 0.7)
+    vision_score = vision_raw.get("score", 0.7)
+    merged_score = audio_score * 0.6 + vision_score * 0.4
+
+    # Pick the worse event as the primary signal
+    priority = {"RAISE_ENERGY": 0, "SPEED_UP": 1, "VIBE_CHECK": 2, "VISUAL_RESET": 3, "GOOD": 4}
+    audio_event = audio_raw.get("event", "GOOD")
+    vision_event = vision_raw.get("event", "GOOD")
+
+    if priority.get(audio_event, 4) <= priority.get(vision_event, 4):
+        event = audio_event
+        message = audio_raw.get("message", "")
+        buzz = audio_raw.get("buzz", False)
+        buzz_pattern = audio_raw.get("buzz_pattern", "single")
+    else:
+        event = vision_event
+        message = vision_raw.get("message", "")
+        buzz = vision_raw.get("buzz", False)
+        buzz_pattern = vision_raw.get("buzz_pattern", "single")
+
+    # But if audio says GOOD and vision says something minor, trust audio
+    if audio_event == "GOOD" and audio_raw.get("confidence", 0) > 0.7:
+        event = "GOOD"
+        message = audio_raw.get("message", "LOCKED IN")
+        buzz = False
+        buzz_pattern = "single"
+        merged_score = max(merged_score, audio_score)
+
+    audio_reason = audio_raw.get("reasoning", "")
+    vision_reason = vision_raw.get("reasoning", "")
+    reasoning = f"Audio: {audio_reason} | Visual: {vision_reason}"
+
+    confidence = min(audio_raw.get("confidence", 1.0), vision_raw.get("confidence", 1.0))
+
+    return {
+        "event": event,
+        "score": round(merged_score, 3),
+        "message": message[:14],
+        "buzz": buzz,
+        "buzz_pattern": buzz_pattern,
+        "confidence": confidence,
+        "reasoning": reasoning,
+    }
+
+
+def _merge_hook_results(audio_raw: dict | None, vision_raw: dict | None) -> dict:
+    """
+    Merge hook audio (65%) and vision (35%) evaluations.
+    If either says HOOK_WEAK, the result is HOOK_WEAK.
+    """
+    if audio_raw and vision_raw:
+        audio_score = audio_raw.get("score", 0.7)
+        vision_score = vision_raw.get("score", 0.7)
+        merged_score = audio_score * 0.65 + vision_score * 0.35
+
+        audio_event = audio_raw.get("event", "HOOK_GOOD")
+        vision_event = vision_raw.get("event", "HOOK_GOOD")
+
+        # If either says weak, it's weak
+        if audio_event == "HOOK_WEAK" or vision_event == "HOOK_WEAK":
+            event = "HOOK_WEAK"
+        else:
+            event = "HOOK_GOOD"
+
+        audio_reason = audio_raw.get("reasoning", "")
+        vision_reason = vision_raw.get("reasoning", "")
+        reasoning = f"Audio: {audio_reason} | Visual: {vision_reason}"
+        confidence = min(audio_raw.get("confidence", 1.0), vision_raw.get("confidence", 1.0))
+        message = audio_raw.get("message", "") if audio_event == "HOOK_WEAK" else vision_raw.get("message", "")
+        if event == "HOOK_GOOD":
+            message = audio_raw.get("message", "GREAT HOOK!")
+        buzz = event == "HOOK_WEAK"
+
+        return {
+            "event": event,
+            "score": round(merged_score, 3),
+            "message": message[:14],
+            "buzz": buzz,
+            "buzz_pattern": "double" if buzz else "single",
+            "confidence": confidence,
+            "reasoning": reasoning,
+        }
+    elif audio_raw:
+        return audio_raw
+    elif vision_raw:
+        return vision_raw
+    else:
+        return {"event": "HOOK_GOOD", "score": 0.65, "message": "HOOK EVAL...", "confidence": 0.0, "reasoning": ""}
+
+
+async def _analyze_hook_audio(audio_wav_bytes: bytes) -> str | None:
+    """One-shot audio hook analysis using generateContent (not Live session)."""
+    pcm_bytes = LiveCoach._wav_to_pcm(audio_wav_bytes)
+    audio_part = types.Part.from_bytes(data=pcm_bytes, mime_type="audio/pcm;rate=16000")
+
+    response = await client.aio.models.generate_content(
+        model=VISION_MODEL,
+        contents=[HOOK_AUDIO_SYSTEM_INSTRUCTION + "\n\nAnalyze this audio opening. Return ONLY JSON.", audio_part],
+        config=types.GenerateContentConfig(
+            temperature=0.3,
+            max_output_tokens=256,
+            response_mime_type="application/json",
+        ),
+    )
+
+    text = ""
+    if response.candidates and response.candidates[0].content:
+        for part in response.candidates[0].content.parts:
+            if part.text:
+                text += part.text
+    return text or None
+
+
+async def _analyze_hook_vision(image_bytes: bytes) -> str | None:
+    """One-shot vision hook analysis using generateContent."""
+    image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
+
+    response = await client.aio.models.generate_content(
+        model=VISION_MODEL,
+        contents=[HOOK_VISION_SYSTEM_INSTRUCTION + "\n\nAnalyze this opening frame. Return ONLY JSON.", image_part],
+        config=types.GenerateContentConfig(
+            temperature=0.3,
+            max_output_tokens=256,
+            response_mime_type="application/json",
+        ),
+    )
+
+    text = ""
+    if response.candidates and response.candidates[0].content:
+        for part in response.candidates[0].content.parts:
+            if part.text:
+                text += part.text
+    return text or None
+
+
+async def _analyze_hook(
+    image_bytes: bytes,
+    session: SessionState,
+    audio_bytes: Optional[bytes] = None,
+) -> CoachingEvent:
+    """
+    Hook evaluation: runs audio + vision hook analysis in parallel
+    using one-shot generateContent (not the persistent Live session).
+    """
+    t_start = time.perf_counter()
+
+    try:
+        has_audio = audio_bytes is not None and len(audio_bytes) > 100
+        tasks = []
+        task_names = []
+
+        if has_audio:
+            tasks.append(_analyze_hook_audio(audio_bytes))
+            task_names.append("audio")
+
+        tasks.append(_analyze_hook_vision(image_bytes))
+        task_names.append("vision")
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        latency_ms = (time.perf_counter() - t_start) * 1000
+        logger.info(f"Hook eval latency: {latency_ms:.0f}ms ({'+'.join(task_names)})")
+
+        audio_raw = None
+        vision_raw = None
+
+        for name, result in zip(task_names, results):
+            if isinstance(result, str) and result:
+                try:
+                    parsed = _parse_gemini_response(result)
+                    # Force hook event types
+                    if parsed["event"] not in ("HOOK_GOOD", "HOOK_WEAK"):
+                        parsed["event"] = "HOOK_GOOD" if parsed["score"] >= 0.65 else "HOOK_WEAK"
+                    logger.info(f"  Hook {name}: {parsed['event']:<14} score={parsed['score']:.2f} | {parsed.get('reasoning', '')}")
+                    if name == "audio":
+                        audio_raw = parsed
+                    else:
+                        vision_raw = parsed
+                except Exception as e:
+                    logger.error(f"  Hook {name} parse failed: {e}")
+            elif isinstance(result, Exception):
+                logger.error(f"  Hook {name} error: {result}")
+
+        if not audio_raw and not vision_raw:
+            return HOOK_FALLBACK
+
+        raw = _merge_hook_results(audio_raw, vision_raw)
+
+        score = raw["score"]
+        filled = int(score * 10)
+        score_bar = "█" * filled + "░" * (10 - filled) + f"{int(score * 100):3d}%"
+        reasoning = raw.get("reasoning", "")
+
+        event = CoachingEvent(
+            event=EventType(raw["event"]),
+            score=score,
+            message=raw.get("message", "")[:14],
+            detail=score_bar,
+            buzz=raw.get("buzz", False),
+            buzz_pattern=raw.get("buzz_pattern", "single"),
+            confidence=raw.get("confidence", 1.0),
+            phase="hook",
+            reasoning=reasoning,
+        )
+
+        logger.info(f"Hook result: {event.event.value} score={event.score:.2f} | {reasoning}")
+
+        session.hook_results.append(event)
+        session.record(event)
+        return event
+
+    except Exception as e:
+        logger.error(f"Hook analysis failed: {type(e).__name__}: {e}")
+        return HOOK_FALLBACK
+
 
 async def analyze(
     image_bytes: bytes,
     audio: AudioMetrics,
     session: SessionState,
+    audio_bytes: Optional[bytes] = None,
 ) -> CoachingEvent:
     """
-    Core inference call. Sends image + audio to Gemini, returns a CoachingEvent.
-    
-    Args:
-        image_bytes: Raw JPEG bytes from the webcam
-        audio:       AudioMetrics computed by the Pi's sound sensor
-        session:     Current session state for context + cooldown management
-    
-    Returns:
-        CoachingEvent ready to be sent back to the Pi
+    Core inference. When audio is available, runs BOTH:
+      1. Native audio model (Live API) — hears tone, pitch, emotion
+      2. Vision model (generateContent) — sees face, posture, movement
+    Then merges results. Falls back to vision-only when no audio.
+
+    During hook phase (first 3s), branches to _analyze_hook() instead.
     """
+    # Check/update phase transition
+    prev_phase = session.phase
+    session.update_phase()
 
-    prompt = _build_prompt(audio, session)
+    # During hook phase: buffer data and return a "collecting" placeholder
+    if session.phase == "hook":
+        session.hook_buffer_image = image_bytes
+        if audio_bytes and len(audio_bytes) > 100:
+            session.hook_buffer_audio = audio_bytes
+        logger.info("Hook phase: collecting data...")
+        collecting = CoachingEvent(
+            event=EventType.GOOD,
+            score=0.5,
+            message="HOOK EVAL...",
+            detail="Collecting...",
+            buzz=False,
+            phase="hook",
+            reasoning="Analyzing your opening...",
+        )
+        return collecting
 
-    # Gemini expects the image as a Part with mime_type
-    image_part = {
-        "mime_type": "image/jpeg",
-        "data": base64.b64encode(image_bytes).decode("utf-8")
-    }
+    # Phase just transitioned from hook → normal: run the hook analysis once
+    if prev_phase == "hook" and not session.hook_evaluated:
+        session.hook_evaluated = True
+        hook_image = session.hook_buffer_image or image_bytes
+        hook_audio = session.hook_buffer_audio if session.hook_buffer_audio else audio_bytes
+        hook_event = await _analyze_hook(hook_image, session, hook_audio)
+        # Clear buffers
+        session.hook_buffer_image = b""
+        session.hook_buffer_audio = b""
+        return hook_event
 
+    has_audio = audio_bytes is not None and len(audio_bytes) > 100
     t_start = time.perf_counter()
 
     try:
-        response = await model.generate_content_async(
-            contents=[prompt, image_part],
-            request_options={"timeout": 8}  # Don't wait more than 8s
-        )
+        if has_audio:
+            # Run audio + vision in parallel
+            turn_prompt = _build_turn_prompt(session)
+            audio_task = _live_coach.analyze(image_bytes, audio_bytes, turn_prompt)
+            vision_task = _analyze_vision_only(image_bytes, session)
+            audio_text, vision_text = await asyncio.gather(
+                audio_task, vision_task, return_exceptions=True
+            )
 
-        latency_ms = (time.perf_counter() - t_start) * 1000
-        logger.info(f"Gemini latency: {latency_ms:.0f}ms")
+            latency_ms = (time.perf_counter() - t_start) * 1000
+            logger.info(f"Gemini latency: {latency_ms:.0f}ms (audio+vision parallel)")
 
-        raw = _parse_gemini_response(response.text)
+            # Parse whichever succeeded
+            audio_raw = None
+            vision_raw = None
 
-        # Build the score bar for LCD line 2
+            if isinstance(audio_text, str) and audio_text:
+                try:
+                    audio_raw = _parse_gemini_response(audio_text)
+                    logger.info(f"  Audio:  {audio_raw['event']:<14} score={audio_raw['score']:.2f} | {audio_raw.get('reasoning', '')}")
+                except Exception as e:
+                    logger.error(f"  Audio parse failed: {e}")
+
+            if isinstance(vision_text, str) and vision_text:
+                try:
+                    vision_raw = _parse_gemini_response(vision_text)
+                    logger.info(f"  Vision: {vision_raw['event']:<14} score={vision_raw['score']:.2f} | {vision_raw.get('reasoning', '')}")
+                except Exception as e:
+                    logger.error(f"  Vision parse failed: {e}")
+
+            if audio_raw and vision_raw:
+                raw = _merge_results(audio_raw, vision_raw)
+            elif audio_raw:
+                raw = audio_raw
+            elif vision_raw:
+                raw = vision_raw
+            else:
+                logger.error("Both audio and vision failed")
+                if isinstance(audio_text, Exception):
+                    logger.error(f"  Audio error: {audio_text}")
+                if isinstance(vision_text, Exception):
+                    logger.error(f"  Vision error: {vision_text}")
+                return FALLBACK
+        else:
+            # Vision-only fallback
+            response_text = await _analyze_vision_only(image_bytes, session)
+            latency_ms = (time.perf_counter() - t_start) * 1000
+            logger.info(f"Gemini latency: {latency_ms:.0f}ms (vision-only)")
+
+            if not response_text:
+                logger.error("Empty response from Gemini")
+                return FALLBACK
+
+            raw = _parse_gemini_response(response_text)
+
         score = raw["score"]
         filled = int(score * 10)
-        score_bar = "█" * filled + "░" * (10 - filled) + f"{int(score*100):3d}%"
+        score_bar = "█" * filled + "░" * (10 - filled) + f"{int(score * 100):3d}%"
 
+        reasoning = raw.get("reasoning", "")
         event = CoachingEvent(
             event=EventType(raw["event"]),
             score=score,
@@ -299,10 +732,10 @@ async def analyze(
             buzz=raw["buzz"],
             buzz_pattern=raw.get("buzz_pattern", "single"),
             confidence=raw.get("confidence", 1.0),
+            phase="normal",
+            reasoning=reasoning,
         )
 
-        # Log what Gemini saw
-        reasoning = raw.get("reasoning", "")
         logger.info(
             f"Event: {event.event.value:<14} "
             f"Score: {event.score:.2f}  "
@@ -310,22 +743,25 @@ async def analyze(
             f"| {reasoning}"
         )
 
-        # Apply cooldown before returning
         event = _apply_cooldown(event, session)
-
-        # Record to session history
         session.record(event)
-
         return event
 
     except json.JSONDecodeError as e:
-        logger.error(f"Gemini returned non-JSON: {e} | Raw: {response.text[:200]}")
-        return FALLBACK_EVENTS["default"]
+        logger.error(f"Non-JSON response: {e}")
+        return FALLBACK
 
     except ValueError as e:
-        logger.error(f"Gemini response validation failed: {e}")
-        return FALLBACK_EVENTS["default"]
+        logger.error(f"Validation failed: {e}")
+        return FALLBACK
 
     except Exception as e:
-        logger.error(f"Gemini call failed: {type(e).__name__}: {e}")
-        return FALLBACK_EVENTS["default"]
+        error_msg = str(e)
+        logger.error(f"Gemini call failed: {type(e).__name__}: {error_msg[:200]}")
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+            import re
+            match = re.search(r'retryDelay.*?(\d+)', error_msg)
+            wait = int(match.group(1)) if match else 15
+            logger.warning(f"Rate limited — waiting {wait}s")
+            await asyncio.sleep(wait)
+        return FALLBACK
