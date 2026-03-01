@@ -214,25 +214,47 @@
       margin-bottom: 24px;
     }
 
-    /* ── ANNOUNCEMENT ── */
-    #announcement {
-      padding-top: 80px;
-      padding-bottom: 0;
-      text-align: center;
-      padding-top: 88px;
-    }
-
     /* ── HERO ── */
     #hero {
-      padding: 60px 40px var(--section-py);
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      overflow: hidden;
+      background: #0b0f1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
+    }
+    #heroCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: block;
+      z-index: 0;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.72) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 900px;
+      padding: 130px 40px 80px;
+      margin: 0 auto;
     }
     .hero-tag {
       font-size: 0.72rem;
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--gray-400);
+      color: rgba(255,255,255,0.75);
       margin-bottom: 28px;
     }
     .hero-headline {
@@ -240,46 +262,42 @@
       font-weight: 700;
       line-height: 1.08;
       letter-spacing: -0.03em;
-      color: var(--black);
+      color: #fff;
       margin-bottom: 24px;
       max-width: 860px;
       margin-left: auto;
       margin-right: auto;
+      text-shadow: 0 2px 24px rgba(0,0,0,0.5);
     }
     .hero-sub {
       font-size: 1.15rem;
       font-weight: 400;
-      color: var(--gray-600);
+      color: rgba(255,255,255,0.85);
       max-width: 540px;
       margin: 0 auto 44px;
       line-height: 1.65;
+      text-shadow: 0 1px 12px rgba(0,0,0,0.4);
     }
     .hero-cta {
       display: flex;
       gap: 14px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-bottom: 60px;
     }
     .hero-cta .btn-primary { padding: 13px 30px; font-size: 0.95rem; border-radius: var(--radius-sm); }
-    .hero-cta .btn-ghost { padding: 13px 30px; font-size: 0.95rem; }
+    .hero-cta .btn-ghost {
+      padding: 13px 30px;
+      font-size: 0.95rem;
+      border-color: rgba(255,255,255,0.6);
+      color: #fff;
+    }
+    .hero-cta .btn-ghost:hover {
+      border-color: #fff;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
 
-    /* Terminal card */
-    .terminal-card {
-      max-width: 820px;
-      margin: 0 auto;
-      background: #0D0D0D;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 80px rgba(0,0,0,0.25);
-    }
-    .terminal-bar {
-      background: #1A1A1A;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    /* Terminal card (kept for feature sections) */
     .terminal-dot {
       width: 12px; height: 12px;
       border-radius: 50%;
@@ -292,14 +310,6 @@
       font-size: 0.75rem;
       font-family: 'SF Mono', 'Fira Code', monospace;
       margin-left: 8px;
-    }
-    .terminal-body {
-      padding: 24px 28px;
-      min-height: 280px;
-      font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
-      font-size: 0.82rem;
-      line-height: 1.8;
-      overflow: hidden;
     }
     .tlog { color: #555; }
     .tlog.good { color: #00C566; }
@@ -797,7 +807,7 @@
       .hamburger { display: flex; }
       .container { padding: 0 24px; }
       nav { padding: 0 24px; }
-      #hero { padding: 40px 24px 80px; }
+      .hero-content { padding: 100px 24px 60px; }
       #stats { padding: 48px 24px; }
       .stats-grid { flex-direction: column; gap: 32px; }
       .stat-divider { width: 80px; height: 1px; }
@@ -841,34 +851,21 @@
   <a href="#cta" onclick="toggleMenu()" style="font-weight:600;color:var(--black)">Talk to us →</a>
 </div>
 
-<!-- ═══════════════════════════════════════════════ ANNOUNCEMENT ═══ -->
-<section id="announcement">
-  <div style="text-align:center; padding: 88px 40px 0;">
-    <a class="pill-badge fade-up">◈ Neuro-Sync wins MLH Hackathon →</a>
-  </div>
-</section>
-
 <!-- ═══════════════════════════════════════════════ HERO ═══ -->
 <section id="hero">
-  <div class="hero-tag fade-up">AI Coaching for Content Creators</div>
-  <h1 class="hero-headline fade-up delay-1">Real-time feedback.<br>Zero editing excuses.</h1>
-  <p class="hero-sub fade-up delay-2">
-    Point a camera at yourself. Neuro-Sync watches your face, listens to your voice, 
-    and fires LED + buzzer signals the moment your energy drops.
-  </p>
-  <div class="hero-cta fade-up delay-3">
-    <a href="#cta" class="btn-primary">Get Started</a>
-    <a href="#how" class="btn-ghost">Watch Demo</a>
-  </div>
-
-  <div class="terminal-card fade-up delay-4">
-    <div class="terminal-bar">
-      <div class="terminal-dot td-red"></div>
-      <div class="terminal-dot td-yellow"></div>
-      <div class="terminal-dot td-green"></div>
-      <span class="terminal-title">neuro-sync — live session</span>
-    </div>
-    <div class="terminal-body" id="terminalBody">
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <a class="pill-badge hero-pill fade-up" style="background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.95);margin-bottom:24px;display:inline-flex;align-items:center;gap:8px;">◈ Neuro-Sync wins MLH Hackathon →</a>
+    <div class="hero-tag fade-up">AI Coaching for Content Creators</div>
+    <h1 class="hero-headline fade-up delay-1">Real-time feedback.<br>Zero editing excuses.</h1>
+    <p class="hero-sub fade-up delay-2">
+      Point a camera at yourself. Neuro-Sync watches your face, listens to your voice, 
+      and fires LED + buzzer signals the moment your energy drops.
+    </p>
+    <div class="hero-cta fade-up delay-3">
+      <a href="#cta" class="btn-primary">Get Started</a>
+      <a href="#how" class="btn-ghost">Watch Demo</a>
     </div>
   </div>
 </section>
@@ -1516,65 +1513,253 @@
     }
   }
 
-  /* ── Terminal log animation ── */
-  const terminalLines = [
-    { text: '$ neuro-sync start --session demo', cls: 'info' },
-    { text: '[00:00] Webcam initialized (640×480 @ 30fps)', cls: '' },
-    { text: '[00:00] Sound sensor on A0 — ready', cls: '' },
-    { text: '[00:00] Grove LEDs D5/D6 — armed', cls: '' },
-    { text: '[00:00] Connecting to Gemini 1.5 Flash...', cls: '' },
-    { text: '[00:00] ✓ API ready. Session started.', cls: 'good' },
-    { text: '─────────────────────────────────────', cls: '' },
-    { text: '[00:02] Frame captured. Audio: 0.71 RMS', cls: '' },
-    { text: '[00:02] → Gemini analyzing...', cls: 'info' },
-    { text: '[00:03] ← Signal: GOOD (score: 87)', cls: 'good' },
-    { text: '[00:03] 💚 Green LED — flash', cls: 'good' },
-    { text: '[00:04] Frame captured. Audio: 0.43 RMS', cls: '' },
-    { text: '[00:05] → Gemini analyzing...', cls: 'info' },
-    { text: '[00:06] ← Signal: RAISE_ENERGY (score: 38)', cls: 'bad' },
-    { text: '[00:06] 🔴 Red LED ON + buzz (1 pulse)', cls: 'bad' },
-    { text: '[00:08] Frame captured. Audio: 0.89 RMS', cls: '' },
-    { text: '[00:09] → Gemini analyzing...', cls: 'info' },
-    { text: '[00:10] ← Signal: GOOD (score: 91)', cls: 'good' },
-    { text: '[00:10] 💚 Green LED — flash', cls: 'good' },
-    { text: '[00:12] Frame captured. Audio: 0.61 RMS', cls: '' },
-    { text: '[00:13] → Gemini analyzing...', cls: 'info' },
-    { text: '[00:14] ← Signal: SPEED_UP (score: pacing:55)', cls: 'warn' },
-    { text: '[00:14] 🟠 Red LED + buzz (2 pulses)', cls: 'warn' },
-    { text: '[00:16] Frame captured. Audio: 0.77 RMS', cls: '' },
-    { text: '[00:17] → Gemini analyzing...', cls: 'info' },
-    { text: '[00:18] ← Signal: GOOD (score: 83)', cls: 'good' },
-    { text: '[00:18] 💚 Green LED — flash', cls: 'good' },
-    { text: '─────────────────────────────────────', cls: '' },
-    { text: '[session] Running... Ctrl+C to end', cls: '' },
-  ];
+  /* ── Hero canvas: full-bleed mountains + flowing river ── */
+  (function() {
+    const canvas = document.getElementById('heroCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
 
-  const termBody = document.getElementById('terminalBody');
-  let lineIdx = 0;
-  let displayedLines = [];
-  const MAX_LINES = 14;
+    function resize() {
+      const hero = document.getElementById('hero');
+      W = canvas.width  = hero.offsetWidth;
+      H = canvas.height = hero.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
 
-  function appendLine() {
-    if (lineIdx >= terminalLines.length) lineIdx = 6;
-    const { text, cls } = terminalLines[lineIdx++];
-    displayedLines.push({ text, cls });
-    if (displayedLines.length > MAX_LINES) displayedLines.shift();
+    function noise(x) {
+      return Math.sin(x * 127.1) * 0.5 + Math.sin(x * 311.7) * 0.3 + Math.sin(x * 74.7) * 0.2;
+    }
 
-    let html = '';
-    displayedLines.forEach(l => {
-      html += `<div class="tlog ${l.cls}">${escHtml(l.text)}</div>`;
-    });
-    html += '<div class="tlog"><span class="cursor-blink"></span></div>';
-    termBody.innerHTML = html;
-  }
+    function makeMountain(seed, peakCount, peakHeightFrac, baseYFrac) {
+      const pts = [];
+      const segW = W / (peakCount * 2);
+      pts.push({ x: -10, y: H });
+      for (let i = 0; i <= peakCount * 2; i++) {
+        const x = i * segW;
+        const n = noise(seed + i * 0.37);
+        const isMid = i % 2 === 1;
+        const h = isMid
+          ? (0.55 + (n * 0.5 + 0.5) * 0.45) * peakHeightFrac * H
+          : (0.15 + (n * 0.5 + 0.5) * 0.25) * peakHeightFrac * H;
+        pts.push({ x, y: H * baseYFrac - h });
+      }
+      pts.push({ x: W + 10, y: H });
+      return pts;
+    }
 
-  function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
+    const LAYERS = [
+      { seed: 1.1, peaks: 5, heightFrac: 0.55, baseY: 0.62, colorTop: '#2a3a52', colorBot: '#1a2535' },
+      { seed: 2.3, peaks: 6, heightFrac: 0.45, baseY: 0.68, colorTop: '#1e3248', colorBot: '#152336' },
+      { seed: 3.7, peaks: 7, heightFrac: 0.38, baseY: 0.74, colorTop: '#1a2c40', colorBot: '#111e2e' },
+      { seed: 4.9, peaks: 8, heightFrac: 0.28, baseY: 0.80, colorTop: '#162538', colorBot: '#0d1a28' },
+    ];
 
-  // Seed first few lines immediately
-  for (let i = 0; i < 6; i++) appendLine();
-  setInterval(appendLine, 1600);
+    const RIVER_TOP_Y_START = 0.72, RIVER_TOP_Y_END = 0.82;
+    const RIVER_BOT_Y_START = 0.78, RIVER_BOT_Y_END = 1.02;
+    const RIVER_X_START = 0.28, RIVER_X_END = 0.72;
+
+    const STARS = Array.from({ length: 120 }, (_, i) => ({
+      x: (noise(i * 0.13) * 0.5 + 0.5),
+      y: (noise(i * 0.27) * 0.5 + 0.5) * 0.55,
+      r: 0.4 + (noise(i * 0.51) * 0.5 + 0.5) * 1.4,
+      phase: noise(i * 0.91) * Math.PI * 2,
+    }));
+
+    const MOON = { rx: 0.72, ry: 0.14, r: 0.038 };
+    let t = 0;
+
+    function drawSky() {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0,    '#0b0f1a');
+      g.addColorStop(0.30, '#111827');
+      g.addColorStop(0.60, '#1a2a3a');
+      g.addColorStop(1,    '#1e3248');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawStars() {
+      STARS.forEach(s => {
+        const alpha = 0.35 + 0.65 * (Math.sin(t * 0.7 + s.phase) * 0.5 + 0.5);
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+        ctx.fill();
+      });
+    }
+
+    function drawMoon() {
+      const mx = MOON.rx * W, my = MOON.ry * H, mr = MOON.r * Math.min(W, H);
+      const glow = ctx.createRadialGradient(mx, my, mr * 0.3, mx, my, mr * 3.5);
+      glow.addColorStop(0, 'rgba(210,230,255,0.15)');
+      glow.addColorStop(1, 'rgba(210,230,255,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(mx, my, mr * 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(mx, my, mr, 0, Math.PI * 2);
+      ctx.fillStyle = '#ddeeff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(mx + mr * 0.3, my - mr * 0.05, mr * 0.82, 0, Math.PI * 2);
+      ctx.fillStyle = '#111827';
+      ctx.fill();
+    }
+
+    function drawMountainLayer(layer) {
+      const pts = makeMountain(layer.seed, layer.peaks, layer.heightFrac, layer.baseY);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i+1].x) / 2;
+        const my = (pts[i].y + pts[i+1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+      ctx.closePath();
+      const topY = Math.min(...pts.map(p => p.y));
+      const g = ctx.createLinearGradient(0, topY, 0, H * layer.baseY);
+      g.addColorStop(0, layer.colorTop);
+      g.addColorStop(1, layer.colorBot);
+      ctx.fillStyle = g;
+      ctx.fill();
+      if (layer.heightFrac > 0.35) {
+        ctx.save();
+        ctx.clip();
+        const snowGrad = ctx.createLinearGradient(0, topY, 0, topY + H * 0.08);
+        snowGrad.addColorStop(0, 'rgba(220,235,255,0.55)');
+        snowGrad.addColorStop(1, 'rgba(220,235,255,0)');
+        ctx.fillStyle = snowGrad;
+        ctx.fillRect(0, topY, W, H * 0.10);
+        ctx.restore();
+      }
+    }
+
+    function drawRiver() {
+      const rxs = RIVER_X_START * W, rxe = RIVER_X_END * W;
+      function riverTopY(x) {
+        const prog = (x - rxs) / (rxe - rxs);
+        const base = (RIVER_TOP_Y_START + prog * (RIVER_TOP_Y_END - RIVER_TOP_Y_START)) * H;
+        return base + Math.sin(x * 0.012 + t * 0.5) * H * 0.012
+                    + Math.sin(x * 0.021 - t * 0.3) * H * 0.007;
+      }
+      function riverBotY(x) {
+        const prog = (x - rxs) / (rxe - rxs);
+        const base = (RIVER_BOT_Y_START + prog * (RIVER_BOT_Y_END - RIVER_BOT_Y_START)) * H;
+        return base + Math.sin(x * 0.014 + t * 0.4 + 1) * H * 0.010
+                    + Math.sin(x * 0.019 - t * 0.25 + 2) * H * 0.006;
+      }
+      ctx.beginPath();
+      ctx.moveTo(rxs, riverTopY(rxs));
+      for (let x = rxs; x <= rxe; x += 3) ctx.lineTo(x, riverTopY(x));
+      for (let x = rxe; x >= rxs; x -= 3) ctx.lineTo(x, riverBotY(x));
+      ctx.closePath();
+      const rg = ctx.createLinearGradient(rxs, 0, rxe, 0);
+      rg.addColorStop(0,   '#0d2233');
+      rg.addColorStop(0.3, '#0e3347');
+      rg.addColorStop(0.5, '#0f4060');
+      rg.addColorStop(0.7, '#0e3347');
+      rg.addColorStop(1,   '#0d2233');
+      ctx.fillStyle = rg;
+      ctx.fill();
+
+      const lineCount = 18;
+      for (let i = 0; i < lineCount; i++) {
+        const prog = ((i / lineCount) + t * 0.08) % 1;
+        const xL = rxs + (rxe - rxs) * 0.05, xR = rxe - (rxe - rxs) * 0.05;
+        const midX = xL + (xR - xL) * 0.5;
+        const y = riverTopY(midX) + (riverBotY(midX) - riverTopY(midX)) * prog;
+        const alpha = Math.sin(prog * Math.PI) * 0.22;
+        const waveAmp = (rxe - rxs) * 0.015;
+        ctx.beginPath();
+        for (let x = xL; x <= xR; x += 3) {
+          const wx = x + Math.sin(x * 0.03 + t * 0.9 + i) * waveAmp;
+          const wy = y + Math.sin(x * 0.025 - t * 0.6 + i * 0.7) * H * 0.008;
+          if (x === xL) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
+        }
+        ctx.strokeStyle = `rgba(100,200,255,${alpha.toFixed(3)})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
+
+      const mx = MOON.rx * W;
+      if (mx >= rxs && mx <= rxe) {
+        const midY = (riverTopY(mx) + riverBotY(mx)) / 2;
+        const rg2 = ctx.createRadialGradient(mx, midY, 2, mx, midY, (rxe - rxs) * 0.18);
+        rg2.addColorStop(0, 'rgba(200,230,255,0.28)');
+        rg2.addColorStop(1, 'rgba(200,230,255,0)');
+        ctx.fillStyle = rg2;
+        ctx.beginPath();
+        ctx.ellipse(mx, midY, (rxe - rxs) * 0.18, H * 0.04, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (let i = 0; i < 12; i++) {
+        const sx = rxs + (rxe - rxs) * (noise(i * 0.17 + t * 0.03) * 0.5 + 0.5);
+        const prog2 = (noise(i * 0.29) * 0.5 + 0.5);
+        const sy = riverTopY(sx) + (riverBotY(sx) - riverTopY(sx)) * prog2;
+        const sparkAlpha = (Math.sin(t * 2.1 + i * 1.3) * 0.5 + 0.5) * 0.35;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180,230,255,${sparkAlpha.toFixed(3)})`;
+        ctx.fill();
+      }
+    }
+
+    function drawBanks() {
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      ctx.lineTo(0, H * 0.78);
+      for (let x = 0; x <= RIVER_X_START * W + 20; x += 4) {
+        const y = H * (0.78 + 0.04 * (x / (RIVER_X_START * W))) + Math.sin(x * 0.04) * H * 0.008;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(RIVER_X_START * W, H);
+      ctx.closePath();
+      const lg = ctx.createLinearGradient(0, H * 0.78, 0, H);
+      lg.addColorStop(0, '#0e1e10'); lg.addColorStop(1, '#0a1509');
+      ctx.fillStyle = lg; ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(W, H);
+      ctx.lineTo(W, H * 0.78);
+      for (let x = W; x >= RIVER_X_END * W - 20; x -= 4) {
+        const prog = (W - x) / (W - RIVER_X_END * W);
+        const y = H * (0.78 + 0.04 * prog) + Math.sin(x * 0.04 + 1) * H * 0.008;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(RIVER_X_END * W, H);
+      ctx.closePath();
+      const rg = ctx.createLinearGradient(0, H * 0.78, 0, H);
+      rg.addColorStop(0, '#0e1e10'); rg.addColorStop(1, '#0a1509');
+      ctx.fillStyle = rg; ctx.fill();
+    }
+
+    function drawHaze() {
+      const haze = ctx.createLinearGradient(0, H * 0.55, 0, H * 0.75);
+      haze.addColorStop(0, 'rgba(20,40,70,0)');
+      haze.addColorStop(1, 'rgba(20,40,70,0.45)');
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, H * 0.55, W, H * 0.20);
+    }
+
+    function frame() {
+      t += 0.016;
+      ctx.clearRect(0, 0, W, H);
+      drawSky();
+      drawStars();
+      drawMoon();
+      LAYERS.forEach(drawMountainLayer);
+      drawHaze();
+      drawRiver();
+      drawBanks();
+      requestAnimationFrame(frame);
+    }
+
+    frame();
+  })();
 </script>
 </body>
 </html>
