@@ -1,0 +1,4 @@
+# Instagram auth + analytics (add to your env; do not replace requirements_server.txt)
+python-jose[cryptography]
+httpx
+python-dotenv
