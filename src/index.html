@@ -30,13 +30,17 @@
       --transition: 0.6s ease;
     }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      overscroll-behavior-y: none;
+    }
     body {
       font-family: 'Inter', sans-serif;
       background: var(--white);
       color: var(--black);
       line-height: 1.6;
       overflow-x: hidden;
+      overscroll-behavior-y: none;
     }
 
     /* ── FADE-UP ANIMATION ── */
@@ -59,34 +63,52 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 1000;
-      background: transparent;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      border: 1px solid transparent;
-      border-radius: 0;
-      box-shadow: none;
-      transition: background 0.3s, backdrop-filter 0.3s, border-color 0.3s, color 0.2s,
-        top 0.3s, left 0.3s, right 0.3s, width 0.3s, border-radius 0.3s, box-shadow 0.3s, padding 0.3s, transform 0.3s;
-      padding: 0 40px;
-      height: 64px;
+      height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 24px 0;
+      transition: padding 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        height 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    nav .nav-inner {
+      width: 100%;
+      max-width: 1200px;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 0 16px;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: 2px solid transparent;
+      border-radius: 0;
+      box-shadow: none;
+      transition: background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        backdrop-filter 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        border-radius 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        box-shadow 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        padding 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
-    nav.scrolled {
-      top: 16px;
-      left: 50%;
-      right: auto;
-      width: calc(100% - 48px);
-      max-width: 1152px;
-      transform: translateX(-50%);
+    nav.nav-over-hero .nav-inner {
+      background: rgba(13, 13, 13, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-color: rgba(255,255,255,0.1);
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      padding: 12px 24px;
+    }
+    nav.scrolled .nav-inner {
       background: rgba(255,255,255,0.94);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-color: rgba(0,0,0,0.06);
       border-radius: 14px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-      padding: 0 24px;
+      padding: 12px 24px;
     }
     nav.nav-over-hero .nav-logo,
     nav.nav-over-hero .nav-links a,
@@ -119,31 +141,41 @@
 
     .nav-links {
       display: flex;
-      gap: 32px;
+      gap: 8px;
       list-style: none;
     }
-    .nav-links a {
+    .nav-links a,
+    .nav-signin {
       text-decoration: none;
-      color: var(--gray-600);
-      font-size: 0.9rem;
+      font-size: 1.05rem;
       font-weight: 450;
-      transition: color 0.2s;
+      padding: 12px 22px;
+      border-radius: var(--radius-sm);
+      border: 2px solid transparent;
+      transition: color 0.2s, background 0.2s, border-color 0.2s;
     }
-    nav:not(.nav-over-hero) .nav-links a:hover { color: var(--black); }
-
+    .nav-links a {
+      color: var(--gray-600);
+    }
+    nav:not(.nav-over-hero) .nav-links a:hover,
+    nav:not(.nav-over-hero) .nav-signin:hover {
+      color: var(--black);
+      background: var(--gray-100);
+      border-color: var(--gray-200);
+    }
     .nav-right {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 12px;
     }
     .nav-signin {
-      text-decoration: none;
       color: var(--gray-600);
-      font-size: 0.9rem;
-      font-weight: 450;
-      transition: color 0.2s;
     }
-    nav:not(.nav-over-hero) .nav-signin:hover { color: var(--black); }
+    nav.nav-over-hero .nav-links a:hover,
+    nav.nav-over-hero .nav-signin:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.4);
+    }
 
     .btn-primary {
       background: var(--black);
@@ -385,7 +417,7 @@
     /* ── STATS BAR ── */
     #stats {
       background: var(--gray-50);
-      padding: 60px 40px;
+      padding: 72px 40px;
     }
     .stats-grid {
       max-width: var(--max-w);
@@ -393,15 +425,160 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 0;
     }
     .stat-item {
       flex: 1;
       text-align: center;
-      padding: 20px 40px;
+      padding: 28px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-radius: var(--radius-md);
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+    .stat-item:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.8);
+    }
+    .stat-icon-wrap {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stat-item.visible .stat-icon-wrap { animation: stat-icon-pop 0.5s ease-out forwards; }
+    @keyframes stat-icon-pop {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.08); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    /* Latency: circular timer pulse */
+    .stat-icon-latency {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+    .stat-icon-latency .ring {
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--gray-200);
+      border-radius: 50%;
+      border-top-color: var(--green);
+    }
+    .stat-item.visible .stat-icon-latency .ring {
+      animation: latency-spin 2s ease-in-out infinite;
+    }
+    .stat-icon-latency .ring-inner {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      opacity: 0.2;
+    }
+    .stat-item.visible .stat-icon-latency .ring-inner {
+      animation: latency-pulse 1s ease-in-out infinite;
+    }
+    @keyframes latency-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes latency-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.2; }
+      50% { transform: scale(1.15); opacity: 0.35; }
+    }
+    /* Signals: 5 dots that light up in sequence */
+    .stat-icon-signals {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .stat-icon-signals .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--gray-200);
+      transition: all 0.3s ease;
+    }
+    .stat-icon-signals .dot:nth-child(1) { background: var(--green); color: var(--green); }
+    .stat-icon-signals .dot:nth-child(2) { background: #22c55e; color: #22c55e; }
+    .stat-icon-signals .dot:nth-child(3) { background: #eab308; color: #eab308; }
+    .stat-icon-signals .dot:nth-child(4) { background: #f97316; color: #f97316; }
+    .stat-icon-signals .dot:nth-child(5) { background: var(--red); color: var(--red); }
+    .stat-item.visible .stat-icon-signals .dot {
+      animation: signal-glow 1.2s ease-in-out infinite;
+    }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(1) { animation-delay: 0s; }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(2) { animation-delay: 0.15s; }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(3) { animation-delay: 0.3s; }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(4) { animation-delay: 0.45s; }
+    .stat-item.visible .stat-icon-signals .dot:nth-child(5) { animation-delay: 0.6s; }
+    @keyframes signal-glow {
+      0%, 100% { opacity: 0.4; transform: scale(0.9); box-shadow: none; }
+      50% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 12px currentColor; }
+    }
+    /* Gemini Vision: eye / AI focus glow */
+    .stat-icon-vision {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+    .stat-icon-vision .eye {
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+      opacity: 0.9;
+    }
+    .stat-icon-vision .eye-pupil {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      top: 50%;
+      left: 50%;
+      margin: -6px 0 0 -6px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 50%;
+    }
+    .stat-icon-vision .vision-ring {
+      position: absolute;
+      inset: -8px;
+      border: 2px solid rgba(139, 92, 246, 0.7);
+      border-radius: 50%;
+    }
+    .stat-item.visible .stat-icon-vision .vision-ring {
+      animation: vision-ring-spin 2s linear infinite;
+    }
+    .stat-icon-vision .glow {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%);
+      opacity: 0;
+    }
+    .stat-item.visible .stat-icon-vision .glow {
+      animation: vision-glow 2s ease-in-out infinite;
+    }
+    .stat-item.visible .stat-icon-vision .eye {
+      animation: vision-focus 3s ease-in-out infinite;
+    }
+    @keyframes vision-ring-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes vision-glow {
+      0%, 100% { opacity: 0; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    @keyframes vision-focus {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; }
     }
     .stat-divider {
       width: 1px;
-      height: 64px;
+      height: 80px;
       background: var(--gray-200);
       flex-shrink: 0;
     }
@@ -592,14 +769,105 @@
     .bar-fill { height: 100%; border-radius: 4px; background: var(--green); width: 0; transition: width 1s ease 0.3s; }
     .bar-score { color: #E0E0E0; font-size: 0.78rem; font-weight: 600; width: 36px; text-align: right; }
 
-    /* ── HOW IT WORKS ── */
+    /* ── HOW IT WORKS (Timeline) ── */
     #how {
       padding: var(--section-py) 40px;
       background: var(--gray-50);
+      position: relative;
+      overflow: hidden;
     }
+    #how::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,197,102,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    #how::after {
+      content: '';
+      position: absolute;
+      bottom: -15%;
+      left: -8%;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .how-bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+    .how-bg-dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+    }
+    .creator-elements {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .creator-elem {
+      position: absolute;
+      opacity: 0.9;
+      color: #F5D547;
+      filter: drop-shadow(0 0 8px rgba(255, 220, 80, 0.9)) drop-shadow(0 0 20px rgba(255, 200, 50, 0.6)) drop-shadow(0 0 40px rgba(255, 180, 30, 0.4));
+      transition: opacity 0.4s ease, filter 0.4s ease;
+    }
+    #how:hover .creator-elem { filter: drop-shadow(0 0 12px rgba(255, 220, 80, 1)) drop-shadow(0 0 28px rgba(255, 200, 50, 0.8)) drop-shadow(0 0 50px rgba(255, 180, 30, 0.5)); }
+    .creator-elem svg { display: block; }
+    .creator-cam-1 { top: 8%; right: 6%; width: 58px; height: 38px; transform: rotate(-8deg); }
+    .creator-cam-2 { top: 28%; left: 4%; width: 48px; height: 32px; transform: rotate(12deg); }
+    .creator-cam-3 { top: 55%; right: 5%; width: 52px; height: 34px; transform: rotate(-5deg); }
+    .creator-cam-4 { top: 78%; left: 8%; width: 44px; height: 30px; transform: rotate(8deg); }
+    .creator-cam-5 { top: 15%; left: 18%; width: 40px; height: 26px; transform: rotate(-15deg); }
+    .creator-cam-6 { top: 68%; right: 15%; width: 46px; height: 30px; transform: rotate(6deg); }
+    .creator-cam-7 { top: 38%; right: 25%; width: 42px; height: 28px; transform: rotate(-18deg); }
+    .creator-cam-8 { top: 5%; left: 28%; width: 38px; height: 25px; transform: rotate(14deg); }
+    .creator-cam-9 { top: 92%; left: 25%; width: 36px; height: 24px; transform: rotate(-8deg); }
+    .creator-cam-10 { top: 50%; left: 20%; width: 34px; height: 22px; transform: rotate(18deg); }
+    .creator-tripod-1 { top: 20%; left: 2%; width: 42px; height: 60px; transform: rotate(6deg); }
+    .creator-tripod-2 { top: 62%; right: 3%; width: 38px; height: 54px; transform: rotate(-10deg); }
+    .creator-tripod-3 { top: 85%; left: 15%; width: 36px; height: 50px; transform: rotate(4deg); }
+    .creator-tripod-4 { top: 35%; right: 18%; width: 32px; height: 44px; transform: rotate(-14deg); }
+    .creator-tripod-5 { top: 72%; left: 22%; width: 30px; height: 42px; transform: rotate(8deg); }
+    .creator-ring-1 { top: 12%; right: 22%; width: 52px; height: 52px; transform: rotate(-12deg); }
+    .creator-ring-2 { top: 48%; left: 2%; width: 44px; height: 44px; transform: rotate(15deg); }
+    .creator-ring-3 { top: 72%; right: 20%; width: 48px; height: 48px; transform: rotate(-8deg); }
+    .creator-ring-4 { top: 35%; right: 8%; width: 36px; height: 36px; transform: rotate(20deg); }
+    .creator-ring-5 { top: 22%; left: 25%; width: 40px; height: 40px; transform: rotate(-22deg); }
+    .creator-ring-6 { top: 58%; right: 28%; width: 34px; height: 34px; transform: rotate(12deg); }
+    .creator-ring-7 { top: 88%; right: 12%; width: 32px; height: 32px; transform: rotate(-6deg); }
+    .creator-mic-1 { top: 42%; left: 12%; width: 28px; height: 44px; transform: rotate(4deg); }
+    .creator-mic-2 { top: 88%; right: 8%; width: 24px; height: 38px; transform: rotate(-6deg); }
+    .creator-mic-3 { top: 5%; left: 8%; width: 26px; height: 42px; transform: rotate(10deg); }
+    .creator-mic-4 { top: 65%; left: 28%; width: 22px; height: 36px; transform: rotate(-12deg); }
+    .creator-mic-5 { top: 18%; right: 32%; width: 24px; height: 38px; transform: rotate(6deg); }
+    .creator-softbox-1 { top: 25%; right: 12%; width: 44px; height: 34px; transform: rotate(10deg); }
+    .creator-softbox-2 { top: 58%; left: 6%; width: 40px; height: 30px; transform: rotate(-12deg); }
+    .creator-softbox-3 { top: 82%; right: 25%; width: 36px; height: 28px; transform: rotate(5deg); }
+    .creator-softbox-4 { top: 8%; right: 35%; width: 32px; height: 24px; transform: rotate(-16deg); }
+    .creator-softbox-5 { top: 45%; left: 8%; width: 34px; height: 26px; transform: rotate(18deg); }
+    .creator-softbox-6 { top: 78%; left: 30%; width: 30px; height: 22px; transform: rotate(-10deg); }
     .how-header {
+      position: relative;
+      z-index: 1;
       text-align: center;
-      margin-bottom: 64px;
+      margin-bottom: 80px;
     }
     .how-header h2 {
       font-size: clamp(1.8rem, 3.5vw, 2.6rem);
@@ -607,13 +875,79 @@
       letter-spacing: -0.03em;
       margin-top: 16px;
     }
-    .how-grid {
-      max-width: var(--max-w);
+    .how-timeline {
+      max-width: 900px;
       margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0;
-      align-items: center;
+      position: relative;
+      z-index: 1;
+      padding-left: 0;
+    }
+    .how-timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--gray-200);
+      transform: translateX(-50%);
+      border-radius: 1px;
+    }
+    .how-timeline-line-fill {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--green), #22c55e);
+      transform: translateX(-50%);
+      border-radius: 1px;
+      transform-origin: top;
+      transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .how-step {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 80px;
+      min-height: 140px;
+    }
+    .how-step:last-child { margin-bottom: 0; }
+    .how-step:nth-child(odd) {
+      flex-direction: row;
+      padding-right: calc(50% + 40px);
+    }
+    .how-step:nth-child(even) {
+      flex-direction: row-reverse;
+      padding-left: calc(50% + 40px);
+    }
+    .how-step-node {
+      position: absolute;
+      left: 50%;
+      top: 28px;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      background: var(--white);
+      border: 3px solid var(--gray-200);
+      border-radius: 50%;
+      z-index: 2;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .how-step.visible .how-step-node {
+      border-color: var(--green);
+      background: var(--green);
+      box-shadow: 0 0 0 6px rgba(0,197,102,0.2);
+    }
+    .how-step-content {
+      flex: 1;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s,
+        transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
+    }
+    .how-step.visible .how-step-content {
+      opacity: 1;
+      transform: translateY(0);
     }
     .how-card {
       background: var(--white);
@@ -621,18 +955,92 @@
       border-radius: var(--radius-md);
       padding: 36px 32px;
       box-shadow: var(--shadow);
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    }
+    .how-step.visible .how-card {
+      border-color: rgba(0,197,102,0.2);
+      box-shadow: var(--shadow), 0 0 0 1px rgba(0,197,102,0.08);
     }
     .how-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-    .how-emoji { font-size: 2rem; margin-bottom: 20px; }
+    .how-icon { width: 48px; height: 48px; margin-bottom: 20px; display: flex; align-items: center; justify-content: flex-start; }
+    .how-icon-capture {
+      position: relative;
+      width: 40px; height: 40px;
+      border: 2.5px solid var(--gray-400);
+      border-radius: 50%;
+    }
+    .how-icon-capture::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border: 2px solid var(--gray-300);
+      border-radius: 50%;
+    }
+    .how-icon-capture::after {
+      content: '';
+      position: absolute;
+      inset: 50%;
+      width: 6px; height: 6px;
+      margin: -3px 0 0 -3px;
+      background: var(--black);
+      border-radius: 50%;
+    }
+    .how-step.visible .how-icon-capture { border-color: var(--green); animation: icon-pulse 2s ease-in-out infinite; }
+    .how-step.visible .how-icon-capture::before { border-color: rgba(0,197,102,0.5); }
+    .how-icon-analyze {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .how-icon-analyze span {
+      width: 10px; height: 10px;
+      background: var(--gray-300);
+      border-radius: 2px;
+      transition: all 0.4s ease;
+    }
+    .how-step.visible .how-icon-analyze span {
+      background: var(--green);
+      animation: icon-node 1.2s ease-in-out infinite;
+    }
+    .how-step.visible .how-icon-analyze span:nth-child(1) { animation-delay: 0s; }
+    .how-step.visible .how-icon-analyze span:nth-child(2) { animation-delay: 0.2s; }
+    .how-step.visible .how-icon-analyze span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes icon-node {
+      0%, 100% { opacity: 0.6; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+    .how-icon-signal {
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+      height: 32px;
+    }
+    .how-icon-signal span {
+      width: 6px;
+      background: var(--gray-300);
+      border-radius: 2px;
+      transition: all 0.4s ease;
+    }
+    .how-icon-signal span:nth-child(1) { height: 12px; }
+    .how-icon-signal span:nth-child(2) { height: 24px; }
+    .how-icon-signal span:nth-child(3) { height: 18px; }
+    .how-step.visible .how-icon-signal span {
+      background: var(--green);
+      animation: icon-bars 1s ease-in-out infinite;
+    }
+    .how-step.visible .how-icon-signal span:nth-child(1) { animation-delay: 0s; }
+    .how-step.visible .how-icon-signal span:nth-child(2) { animation-delay: 0.15s; }
+    .how-step.visible .how-icon-signal span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes icon-bars {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    @keyframes icon-pulse {
+      0%, 100% { box-shadow: none; }
+      50% { box-shadow: 0 0 0 4px rgba(0,197,102,0.15); }
+    }
     .how-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 12px; }
     .how-card p { font-size: 0.875rem; color: var(--gray-600); line-height: 1.65; }
-    .how-arrow {
-      text-align: center;
-      color: var(--gray-200);
-      font-size: 1.5rem;
-      padding: 0 12px;
-    }
 
     /* ── HARDWARE ── */
     #hardware {
@@ -856,19 +1264,23 @@
       .feature-block { grid-template-columns: 1fr; }
       .hardware-inner { grid-template-columns: 1fr; gap: 48px; }
       .footer-top { grid-template-columns: 1fr; gap: 40px; }
-      .how-grid { grid-template-columns: 1fr; gap: 24px; }
-      .how-arrow { display: none; }
+      .how-timeline::before { left: 20px; transform: none; }
+      .how-timeline-line-fill { left: 20px; transform: none; }
+      .how-step { flex-direction: row !important; padding-left: 60px !important; padding-right: 0 !important; margin-bottom: 48px; min-height: 120px; }
+      .how-step-node { left: 20px; margin-left: 0; }
+      .how-step:last-child { margin-bottom: 0; }
     }
     @media (max-width: 768px) {
       .nav-links, .nav-right { display: none; }
       .hamburger { display: flex; }
       .container { padding: 0 24px; }
-      nav { padding: 0 24px; }
-      nav.scrolled { width: calc(100% - 32px); top: 12px; padding: 0 20px; }
+      nav { padding: 12px 16px 0; }
+      nav .nav-inner { padding: 12px 20px; }
       .hero-content { padding: 130px 24px 60px; }
       #stats { padding: 48px 24px; }
       .stats-grid { flex-direction: column; gap: 32px; }
       .stat-divider { width: 80px; height: 1px; }
+      .stat-item { padding: 24px 20px; }
       #features, #how, #hardware, #testimonial, #cta { padding: 80px 24px; }
       footer { padding: 48px 24px 32px; }
       .quote-card { padding: 40px 28px; }
@@ -884,6 +1296,7 @@
 
 <!-- ═══════════════════════════════════════════════ NAVBAR ═══ -->
 <nav id="navbar" class="nav-over-hero">
+  <div class="nav-inner">
   <a href="#" class="nav-logo">
     <span class="dot"></span> Neuro-Sync
   </a>
@@ -900,6 +1313,7 @@
   <div class="hamburger" id="hamburger" onclick="toggleMenu()">
     <span></span><span></span><span></span>
   </div>
+  </div>
 </nav>
 <div class="mobile-menu" id="mobileMenu">
   <a href="#how" onclick="toggleMenu()">How It Works</a>
@@ -914,8 +1328,7 @@
   <canvas id="heroCanvas"></canvas>
   <div class="hero-overlay"></div>
   <div class="hero-content">
-    <a class="pill-badge hero-pill fade-up"><span class="pulse-dot"></span>Neuro-Sync wins MLH Hackathon →</a>
-    <div class="hero-tag fade-up">AI Coaching for Content Creators</div>
+    <a class="pill-badge hero-pill fade-up"><span class="pulse-dot"></span>AI Coaching For Content Creators →</a>
     <h1 class="hero-headline fade-up delay-1">Real-time feedback.<br>Zero editing excuses.</h1>
     <p class="hero-sub fade-up delay-2">
       Point a camera at yourself. Neuro-Sync watches your face, listens to your voice, 
@@ -932,16 +1345,34 @@
 <section id="stats">
   <div class="stats-grid">
     <div class="stat-item fade-up">
+      <div class="stat-icon-wrap">
+        <div class="stat-icon-latency">
+          <div class="ring"></div>
+          <div class="ring-inner"></div>
+        </div>
+      </div>
       <div class="stat-number" data-target="2" data-suffix="s" data-decimals="0">0s</div>
       <div class="stat-label">Feedback loop latency</div>
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item fade-up delay-1">
+      <div class="stat-icon-wrap">
+        <div class="stat-icon-signals">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+      </div>
       <div class="stat-number" data-target="5" data-suffix="" data-decimals="0">0</div>
       <div class="stat-label">Coaching signals</div>
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item fade-up delay-2">
+      <div class="stat-icon-wrap">
+        <div class="stat-icon-vision">
+          <div class="vision-ring"></div>
+          <div class="glow"></div>
+          <div class="eye"><div class="eye-pupil"></div></div>
+        </div>
+      </div>
       <div class="stat-number" data-target="1.5" data-suffix=" Flash" data-decimals="1" style="font-size:clamp(1.8rem,3.5vw,2.6rem)">0 Flash</div>
       <div class="stat-label">Gemini Vision model</div>
     </div>
@@ -1295,27 +1726,78 @@
 
 <!-- ═══════════════════════════════════════════════ HOW IT WORKS ═══ -->
 <section id="how">
+  <div class="how-bg-grid" aria-hidden="true"></div>
+  <div class="how-bg-dots" aria-hidden="true"></div>
+  <div class="creator-elements" aria-hidden="true">
+    <div class="creator-elem creator-cam-1"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-2"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-3"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-4"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-5"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-6"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-7"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-8"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-9"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-cam-10"><svg viewBox="0 0 72 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="14" width="48" height="28" rx="4"/><circle cx="36" cy="28" r="10"/><circle cx="36" cy="28" r="4"/><rect x="56" y="20" width="8" height="14" rx="1"/><path d="M16 14 L20 10 L52 10 L56 14"/></svg></div>
+    <div class="creator-elem creator-tripod-1"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-tripod-2"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-tripod-3"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-tripod-4"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-tripod-5"><svg viewBox="0 0 56 80" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="28" y1="8" x2="28" y2="72"/><line x1="12" y1="72" x2="44" y2="72"/><line x1="28" y1="48" x2="8" y2="80"/><line x1="28" y1="48" x2="48" y2="80"/><line x1="28" y1="48" x2="28" y2="80"/><circle cx="28" cy="12" r="6"/><rect x="22" y="0" width="12" height="12" rx="1"/></svg></div>
+    <div class="creator-elem creator-ring-1"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-2"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-3"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-4"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-5"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-6"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-ring-7"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="18"/><line x1="32" y1="8" x2="32" y2="14"/><line x1="32" y1="50" x2="32" y2="56"/><line x1="8" y1="32" x2="14" y2="32"/><line x1="50" y1="32" x2="56" y2="32"/><line x1="14" y1="14" x2="18" y2="18"/><line x1="46" y1="46" x2="50" y2="50"/><line x1="46" y1="14" x2="50" y2="18"/><line x1="14" y1="46" x2="18" y2="50"/></svg></div>
+    <div class="creator-elem creator-mic-1"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-mic-2"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-mic-3"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-mic-4"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-mic-5"><svg viewBox="0 0 40 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="4" width="12" height="24" rx="6"/><path d="M20 28 L20 44"/><path d="M8 44 L32 44"/><path d="M12 52 L28 52"/><line x1="20" y1="52" x2="20" y2="60"/></svg></div>
+    <div class="creator-elem creator-softbox-1"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-2"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-3"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-4"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-5"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+    <div class="creator-elem creator-softbox-6"><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="4" width="40" height="32" rx="2"/><line x1="28" y1="4" x2="20" y2="0"/><line x1="28" y1="4" x2="36" y2="0"/><line x1="28" y1="36" x2="20" y2="44"/><line x1="28" y1="36" x2="36" y2="44"/><circle cx="28" cy="20" r="6"/><line x1="28" y1="14" x2="28" y2="8"/><line x1="28" y1="26" x2="28" y2="32"/><line x1="22" y1="20" x2="16" y2="20"/><line x1="34" y1="20" x2="40" y2="20"/></svg></div>
+  </div>
   <div class="how-header fade-up">
     <div class="pill-badge" style="margin-bottom:20px">HOW IT WORKS</div>
     <h2>Three steps from setup to signal.</h2>
   </div>
-  <div class="how-grid container">
-    <div class="how-card fade-up">
-      <div class="how-emoji">📷</div>
-      <h3>Capture</h3>
-      <p>Your webcam grabs a frame every 2 seconds. The Grove Sound Sensor samples your voice level in real time — no microphone array required.</p>
+  <div class="how-timeline container" id="howTimeline">
+    <div class="how-timeline-line-fill" id="timelineLineFill"></div>
+    <div class="how-step" data-step="1">
+      <div class="how-step-node"></div>
+      <div class="how-step-content">
+        <div class="how-card">
+          <div class="how-icon"><div class="how-icon-capture"></div></div>
+          <h3>Capture</h3>
+          <p>Your webcam grabs a frame every 2 seconds. The Grove Sound Sensor samples your voice level in real time — no microphone array required.</p>
+        </div>
+      </div>
     </div>
-    <div class="how-arrow fade-up delay-1">→</div>
-    <div class="how-card fade-up delay-1">
-      <div class="how-emoji">🤖</div>
-      <h3>Analyze</h3>
-      <p>Gemini 1.5 Flash Vision scores your energy, pacing, and eye contact from the frame + audio data. No cloud storage. No recording.</p>
+    <div class="how-step" data-step="2">
+      <div class="how-step-node"></div>
+      <div class="how-step-content">
+        <div class="how-card">
+          <div class="how-icon"><div class="how-icon-analyze"><span></span><span></span><span></span></div></div>
+          <h3>Analyze</h3>
+          <p>Gemini 1.5 Flash Vision scores your energy, pacing, and eye contact from the frame + audio data. No cloud storage. No recording.</p>
+        </div>
+      </div>
     </div>
-    <div class="how-arrow fade-up delay-2">→</div>
-    <div class="how-card fade-up delay-2">
-      <div class="how-emoji">💡</div>
-      <h3>Signal</h3>
-      <p>LED strip + buzzer fire instantly. No phone. No earbuds. No interrupting your flow — just light and sound that your body learns to respond to.</p>
+    <div class="how-step" data-step="3">
+      <div class="how-step-node"></div>
+      <div class="how-step-content">
+        <div class="how-card">
+          <div class="how-icon"><div class="how-icon-signal"><span></span><span></span><span></span></div></div>
+          <h3>Signal</h3>
+          <p>LED strip + buzzer fire instantly. No phone. No earbuds. No interrupting your flow — just light and sound that your body learns to respond to.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1495,13 +1977,16 @@
   /* ── Navbar: transparent over hero, floating bar when scrolled past hero ── */
   const navbar = document.getElementById('navbar');
   const hero = document.getElementById('hero');
+  let lastNavOverHero = true;
   const observerNav = new IntersectionObserver(
     ([e]) => {
       const overHero = e.isIntersecting;
+      if (overHero === lastNavOverHero) return;
+      lastNavOverHero = overHero;
       navbar.classList.toggle('nav-over-hero', overHero);
       navbar.classList.toggle('scrolled', !overHero);
     },
-    { threshold: 0.1, rootMargin: '-64px 0px 0px 0px' }
+    { threshold: 0.05, rootMargin: '-64px 0px 0px 0px' }
   );
   if (hero) observerNav.observe(hero);
 
@@ -1520,6 +2005,35 @@
     });
   }, { threshold: 0.12 });
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  /* ── Timeline: scroll-synced steps + line fill ── */
+  const timeline = document.getElementById('howTimeline');
+  const lineFill = document.getElementById('timelineLineFill');
+  const steps = document.querySelectorAll('.how-step');
+  if (timeline && lineFill && steps.length) {
+    function updateTimelineLine() {
+      const timelineRect = timeline.getBoundingClientRect();
+      const triggerY = window.innerHeight * 0.7;
+      let lastVisibleNodeOffset = 0;
+      steps.forEach((step) => {
+        const node = step.querySelector('.how-step-node');
+        if (!node) return;
+        const nodeRect = node.getBoundingClientRect();
+        const nodeCenterOffset = nodeRect.top - timelineRect.top + nodeRect.height / 2;
+        if (nodeRect.top < triggerY) {
+          step.classList.add('visible');
+          lastVisibleNodeOffset = Math.max(lastVisibleNodeOffset, nodeCenterOffset);
+        }
+      });
+      lineFill.style.height = Math.max(0, lastVisibleNodeOffset) + 'px';
+    }
+    const timelineObserver = new IntersectionObserver(() => updateTimelineLine(), { threshold: 0 });
+    timelineObserver.observe(timeline);
+    window.addEventListener('scroll', () => {
+      if (timeline.getBoundingClientRect().bottom > 0) updateTimelineLine();
+    }, { passive: true });
+    updateTimelineLine();
+  }
 
   /* ── Counter animation ── */
   function animateCounter(el) {
